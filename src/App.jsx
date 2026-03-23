@@ -18,7 +18,7 @@ const ALL_COSTS = [
 ];
 
 const C = { red:"#dc6059", yellow:"#ffdc8b", teal:"#0097a7", redLight:"#fdf1f0", redMid:"#f5b8b5", tealLight:"#e0f5f7", tealMid:"#4ec4cf", yellowLight:"#fffbf0", yellowMid:"#ffe9a0", dark:"#1a2e30", mid:"#4a6366", light:"#8aa5a8", border:"#dde8e9", bg:"#f7fafa" };
-const PIE_COLORS = [C.red, C.teal, C.yellow, "#e8927c","#33b5c2","#a0d8de"];
+const PIE_COLORS = [C.red, C.teal, C.yellow, "#e8927c","#33b5c2","#a0d8de","#f5c842","#6dd6a0"];
 
 const fmt2 = n => Number(n).toFixed(2);
 const fmtBig = n => {
@@ -57,19 +57,18 @@ function PieChart({ data }) {
       <text x={cx} y={cy+10} textAnchor="middle" dominantBaseline="middle" fontSize="9" fill={PIE_COLORS[0]}>{data[0].label}</text>
     </svg>
   );
-  let cum = -Math.PI/2;
-  const slices = data.map((d,i)=>{
-    const pct=d.value/total, a1=cum, a2=cum+pct*2*Math.PI; cum=a2;
+  let cum=-Math.PI/2;
+  const slices=data.map((d,i)=>{
+    const pct=d.value/total,a1=cum,a2=cum+pct*2*Math.PI; cum=a2;
     const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1),x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);
     const xi1=cx+ir*Math.cos(a1),yi1=cy+ir*Math.sin(a1),xi2=cx+ir*Math.cos(a2),yi2=cy+ir*Math.sin(a2);
-    const large=pct>0.5?1:0, mid=(a1+a2)/2;
-    return { path:`M${xi1} ${yi1}L${x1} ${y1}A${r} ${r} 0 ${large} 1 ${x2} ${y2}L${xi2} ${yi2}A${ir} ${ir} 0 ${large} 0 ${xi1} ${yi1}Z`, color:PIE_COLORS[i%PIE_COLORS.length], pct:Math.round(pct*100), lx:cx+(r+20)*Math.cos(mid), ly:cy+(r+20)*Math.sin(mid) };
+    const large=pct>0.5?1:0,mid=(a1+a2)/2;
+    return {path:`M${xi1} ${yi1}L${x1} ${y1}A${r} ${r} 0 ${large} 1 ${x2} ${y2}L${xi2} ${yi2}A${ir} ${ir} 0 ${large} 0 ${xi1} ${yi1}Z`,color:PIE_COLORS[i%PIE_COLORS.length],pct:Math.round(pct*100),lx:cx+(r+20)*Math.cos(mid),ly:cy+(r+20)*Math.sin(mid)};
   });
   return (
     <svg viewBox={`0 0 ${size} ${size}`} width="100%" style={{maxWidth:200,display:"block",margin:"0 auto"}}>
       {slices.map((s,i)=>(
-        <g key={i}>
-          <path d={s.path} fill={s.color}/>
+        <g key={i}><path d={s.path} fill={s.color}/>
           {s.pct>7&&<text x={s.lx} y={s.ly} textAnchor="middle" dominantBaseline="middle" fontSize="9.5" fill={s.color} fontWeight="600">{s.pct}%</text>}
         </g>
       ))}
@@ -90,6 +89,12 @@ function SectionTitle({ children, sub }) {
   );
 }
 
+const HOW_TO = [
+  { icon:"📋", title:"Fill in the inputs", body:"Select the state, geography level (State / District / Block), and the type of commodity currently being supplied (wheat grain or flour). Then enter the total number of beneficiaries and the monthly kg allocation per person." },
+  { icon:"📊", title:"Interpret the results", body:"The calculator shows your target annual volume, the base unit cost per kg, and the total program cost. The cost breakdown table lists every cost category. Rows highlighted in yellow are additional costs introduced by switching to fortified atta — these also appear in the pie chart on the right." },
+  { icon:"✏️", title:"Edit or add costs", body:"The default costs come from an FFI case study in Haryana. Click 'Edit costs' to enter your own unit costs for any category. Use '+ Add cost category' to include costs specific to your context (e.g. storage, last-mile delivery). All changes update the total automatically." },
+];
+
 export default function App() {
   const [geoName, setGeoName] = useState("");
   const [geoLevel, setGeoLevel] = useState("State");
@@ -98,22 +103,46 @@ export default function App() {
   const [kgPerBenef, setKgPerBenef] = useState("");
   const [customMode, setCustomMode] = useState(false);
   const [customCosts, setCustomCosts] = useState({...DEFAULTS["State"]});
+  const [extraCats, setExtraCats] = useState([]);
+  const [newLabel, setNewLabel] = useState("");
+  const [newCost, setNewCost] = useState("");
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const costs = customMode ? customCosts : DEFAULTS[geoLevel];
   const isGrain = supplyType === "Wheat Grain";
 
   const handleLevelChange = lvl => { setGeoLevel(lvl); if (!customMode) setCustomCosts({...DEFAULTS[lvl]}); };
 
+  const handleReset = () => { setCustomCosts({...DEFAULTS[geoLevel]}); setExtraCats([]); };
+
+  const addCategory = () => {
+    if (!newLabel.trim()) return;
+    setExtraCats(p=>[...p, { id: Date.now(), label:newLabel.trim(), cost: parseFloat(newCost)||0 }]);
+    setNewLabel(""); setNewCost("");
+  };
+
+  const removeExtra = id => setExtraCats(p=>p.filter(e=>e.id!==id));
+  const updateExtra = (id,val) => setExtraCats(p=>p.map(e=>e.id===id?{...e,cost:parseFloat(val)||0}:e));
+
   const targetVol = useMemo(()=>{
-    const p=parseFloat(population), k=parseFloat(kgPerBenef);
+    const p=parseFloat(population),k=parseFloat(kgPerBenef);
     return (!p||!k)?0:p*k*12;
   },[population,kgPerBenef]);
 
   const additionalKeys = ALL_COSTS.filter(c=>isGrain?c.grainAdd:c.flourAdd).map(c=>c.key);
-  const additionalTotal = additionalKeys.reduce((s,k)=>s+(parseFloat(costs[k])||0),0)*targetVol;
-  const unitTotal = ALL_COSTS.reduce((s,c)=>s+(parseFloat(costs[c.key])||0),0);
-  const totalCost = unitTotal*targetVol;
-  const pieData = additionalKeys.map(k=>({ label:ALL_COSTS.find(c=>c.key===k)?.label||k, value:(parseFloat(costs[k])||0)*targetVol })).filter(d=>d.value>0);
+  const extraUnitTotal = extraCats.reduce((s,e)=>s+e.cost,0);
+  const baseUnitTotal = ALL_COSTS.reduce((s,c)=>s+(parseFloat(costs[c.key])||0),0);
+  const unitTotal = baseUnitTotal + extraUnitTotal;
+  const totalCost = unitTotal * targetVol;
+
+  const additionalTotal = [...additionalKeys.map(k=>parseFloat(costs[k])||0), ...extraCats.map(e=>e.cost)].reduce((s,v)=>s+v,0)*targetVol;
+
+  const pieData = [
+    ...additionalKeys.map(k=>({ label:ALL_COSTS.find(c=>c.key===k)?.label||k, value:(parseFloat(costs[k])||0)*targetVol })),
+    ...extraCats.map(e=>({ label:e.label, value:e.cost*targetVol }))
+  ].filter(d=>d.value>0);
+
+  const cardShadow = "0 1px 4px rgba(0,151,167,0.06)";
 
   return (
     <>
@@ -132,8 +161,35 @@ export default function App() {
 
       <div style={{maxWidth:920,margin:"0 auto",padding:"1.5rem 1.5rem 3rem"}}>
 
+        {/* How to use — collapsible */}
+        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,marginBottom:"1rem",boxShadow:cardShadow,overflow:"hidden"}}>
+          <button onClick={()=>setGuideOpen(o=>!o)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"1rem 1.5rem",background:"none",border:"none",textAlign:"left"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:6,height:20,background:C.yellow,borderRadius:3}}/>
+              <span style={{fontSize:13,fontWeight:600,color:C.dark,textTransform:"uppercase",letterSpacing:"0.06em"}}>How to use this calculator</span>
+            </div>
+            <span style={{fontSize:18,color:C.light,lineHeight:1}}>{guideOpen?"−":"+"}</span>
+          </button>
+          {guideOpen&&(
+            <div style={{padding:"0 1.5rem 1.25rem",borderTop:`1px solid ${C.border}`}}>
+              <p style={{fontSize:13,color:C.mid,margin:"1rem 0 1.25rem",lineHeight:1.7}}>This tool helps program managers and stakeholders estimate the annual cost of introducing fortified atta into an existing food distribution program. Follow the steps below to get started.</p>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12}}>
+                {HOW_TO.map((h,i)=>(
+                  <div key={i} style={{background:C.bg,borderRadius:10,padding:"1rem 1.1rem",border:`1px solid ${C.border}`}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                      <span style={{fontSize:18}}>{h.icon}</span>
+                      <span style={{fontSize:13,fontWeight:600,color:C.dark}}>{h.title}</span>
+                    </div>
+                    <p style={{fontSize:12,color:C.mid,lineHeight:1.65,margin:0}}>{h.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Inputs */}
-        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
+        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:cardShadow}}>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
             <div style={{width:6,height:20,background:C.teal,borderRadius:3}}/>
             <p style={{fontSize:13,fontWeight:600,color:C.teal,margin:0,textTransform:"uppercase",letterSpacing:"0.06em"}}>Input parameters</p>
@@ -149,15 +205,15 @@ export default function App() {
 
         {/* Summary cards */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1.3fr",gap:12,marginBottom:"1rem"}}>
-          <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"1.1rem 1.25rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
+          <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"1.1rem 1.25rem",boxShadow:cardShadow}}>
             <p style={{fontSize:11,fontWeight:600,color:C.mid,textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 6px"}}>Target volume / year</p>
             <p style={{fontSize:26,fontWeight:600,color:C.dark,margin:0,lineHeight:1.1}}>{targetVol>0?`${(targetVol/1000).toFixed(1)}t`:"—"}</p>
             {targetVol>0&&<p style={{fontSize:11,color:C.light,margin:"3px 0 0"}}>{targetVol.toLocaleString("en-IN")} kg</p>}
           </div>
-          <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"1.1rem 1.25rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
+          <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"1.1rem 1.25rem",boxShadow:cardShadow}}>
             <p style={{fontSize:11,fontWeight:600,color:C.mid,textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 6px"}}>Base unit cost</p>
             <p style={{fontSize:26,fontWeight:600,color:C.dark,margin:0,lineHeight:1.1}}>₹{fmt2(unitTotal)}<span style={{fontSize:13,fontWeight:400,color:C.light}}> /kg</span></p>
-            <p style={{fontSize:11,color:C.light,margin:"3px 0 0"}}>{geoLevel} level defaults</p>
+            <p style={{fontSize:11,color:C.light,margin:"3px 0 0"}}>{geoLevel} level</p>
           </div>
           <div style={{background:`linear-gradient(135deg, ${C.teal} 0%, #007b8a 100%)`,borderRadius:12,padding:"1.1rem 1.25rem",position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",right:-16,top:-16,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.08)"}}/>
@@ -170,7 +226,7 @@ export default function App() {
 
         {/* Breakdown + Additional */}
         <div style={{display:"grid",gridTemplateColumns:"1.6fr 1fr",gap:12,marginBottom:"1rem",alignItems:"start"}}>
-          <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
+          <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:cardShadow}}>
             <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}}>
               <SectionTitle sub="Unit costs and total annual costs">Cost breakdown</SectionTitle>
               <button onClick={()=>{ if(!customMode) setCustomCosts({...DEFAULTS[geoLevel]}); setCustomMode(!customMode); }}
@@ -194,23 +250,35 @@ export default function App() {
                     <tr key={key} style={{borderBottom:`1px solid ${C.border}`,background:isAdd?C.yellowLight:"transparent"}}>
                       <td style={{padding:"8px 0"}}>
                         <div style={{display:"flex",alignItems:"center",gap:7}}>
-                          {isAdd
-                            ? <span style={{fontSize:9,padding:"2px 6px",borderRadius:10,background:C.yellow,color:"#7a5c00",fontWeight:600}}>+</span>
-                            : <span style={{width:14,display:"inline-block"}}/>
-                          }
+                          {isAdd?<span style={{fontSize:9,padding:"2px 6px",borderRadius:10,background:C.yellow,color:"#7a5c00",fontWeight:600}}>+</span>:<span style={{width:14,display:"inline-block"}}/>}
                           <span style={{color:C.dark}}>{label}</span>
                         </div>
                       </td>
                       <td style={{textAlign:"right",padding:"8px 8px"}}>
                         {customMode
                           ? <input type="number" value={customCosts[key]} onChange={e=>setCustomCosts(p=>({...p,[key]:e.target.value}))} step="0.01" style={{width:80,textAlign:"right",padding:"4px 6px",fontSize:12}}/>
-                          : <span style={{color:C.mid,fontWeight:500}}>{fmt2(uc)}</span>
-                        }
+                          : <span style={{color:C.mid,fontWeight:500}}>{fmt2(uc)}</span>}
                       </td>
                       <td style={{textAlign:"right",padding:"8px 0",color:C.mid}}>{fmtBig(uc*targetVol)}</td>
                     </tr>
                   );
                 })}
+                {/* Extra categories */}
+                {extraCats.map(e=>(
+                  <tr key={e.id} style={{borderBottom:`1px solid ${C.border}`,background:C.yellowLight}}>
+                    <td style={{padding:"8px 0"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:7}}>
+                        <span style={{fontSize:9,padding:"2px 6px",borderRadius:10,background:C.yellow,color:"#7a5c00",fontWeight:600}}>+</span>
+                        <span style={{color:C.dark}}>{e.label}</span>
+                        <button onClick={()=>removeExtra(e.id)} style={{fontSize:11,color:C.light,background:"none",border:"none",padding:"0 2px",lineHeight:1,marginLeft:2}}>✕</button>
+                      </div>
+                    </td>
+                    <td style={{textAlign:"right",padding:"8px 8px"}}>
+                      <input type="number" value={e.cost} onChange={ev=>updateExtra(e.id,ev.target.value)} step="0.01" style={{width:80,textAlign:"right",padding:"4px 6px",fontSize:12}}/>
+                    </td>
+                    <td style={{textAlign:"right",padding:"8px 0",color:C.mid}}>{fmtBig(e.cost*targetVol)}</td>
+                  </tr>
+                ))}
               </tbody>
               <tfoot>
                 <tr style={{borderTop:`2px solid ${C.border}`}}>
@@ -220,14 +288,26 @@ export default function App() {
                 </tr>
               </tfoot>
             </table>
-            {customMode&&(
-              <button onClick={()=>setCustomCosts({...DEFAULTS[geoLevel]})} style={{marginTop:10,fontSize:12,padding:"6px 12px",background:C.redLight,color:C.red,border:`1px solid ${C.redMid}`,borderRadius:7,fontWeight:500}}>
+
+            {/* Add category row */}
+            <div style={{marginTop:12,padding:"10px 12px",background:C.bg,borderRadius:8,border:`1px dashed ${C.border}`}}>
+              <p style={{fontSize:11,fontWeight:600,color:C.mid,textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 8px"}}>+ Add cost category</p>
+              <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                <input placeholder="Category name (e.g. Storage costs)" value={newLabel} onChange={e=>setNewLabel(e.target.value)} style={{flex:"2 1 140px",fontSize:12,padding:"7px 10px"}}/>
+                <input type="number" placeholder="₹/kg" value={newCost} onChange={e=>setNewCost(e.target.value)} step="0.01" style={{flex:"1 1 70px",fontSize:12,padding:"7px 10px"}}/>
+                <button onClick={addCategory} style={{fontSize:12,padding:"7px 14px",background:C.teal,color:"#fff",border:"none",borderRadius:8,fontWeight:500,flexShrink:0}}>Add</button>
+              </div>
+            </div>
+
+            {(customMode||extraCats.length>0)&&(
+              <button onClick={handleReset} style={{marginTop:10,fontSize:12,padding:"6px 12px",background:C.redLight,color:C.red,border:`1px solid ${C.redMid}`,borderRadius:7,fontWeight:500}}>
                 Reset to defaults
               </button>
             )}
           </div>
 
-          <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
+          {/* Additional costs */}
+          <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:cardShadow}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
               <p style={{fontSize:15,fontWeight:600,color:C.dark,margin:0}}>Additional costs</p>
               <span style={{fontSize:11,padding:"3px 10px",borderRadius:20,background:isGrain?C.yellowLight:C.tealLight,color:isGrain?"#7a5c00":C.teal,fontWeight:600,border:`1px solid ${isGrain?C.yellowMid:C.tealMid}`}}>{supplyType}</span>
@@ -257,7 +337,7 @@ export default function App() {
         </div>
 
         {/* Reference */}
-        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
+        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:cardShadow}}>
           <SectionTitle sub="Default unit costs (₹/kg) across geography levels">Default costs reference</SectionTitle>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
             <thead>
@@ -285,7 +365,7 @@ export default function App() {
           </table>
           <div style={{marginTop:14,padding:"10px 14px",background:C.yellowLight,borderRadius:8,border:`1px solid ${C.yellowMid}`}}>
             <p style={{fontSize:12,color:"#7a5c00",margin:0,lineHeight:1.6}}>
-              <strong>Note:</strong> Default costs are sourced from an FFI case study in Haryana. They are provided as a starting point — use <em>Edit costs</em> in the breakdown table to enter your own unit costs and adjust the calculations accordingly.
+              <strong>Note:</strong> Default costs are sourced from an FFI case study in Haryana. They are provided as a starting point — use <em>Edit costs</em> to enter your own unit costs, and <em>Add cost category</em> to include any additional costs specific to your context.
             </p>
           </div>
         </div>
