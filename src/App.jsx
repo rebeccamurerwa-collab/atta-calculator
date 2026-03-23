@@ -17,7 +17,7 @@ const ALL_COSTS = [
   { key:"transportDist",    label:"Transport for distribution",    grainAdd:true,  flourAdd:false },
 ];
 
-const C = { red:"#dc6059", yellow:"#ffdc8b", teal:"#0097a7", redLight:"#fdf1f0", redMid:"#f5b8b5", tealLight:"#e0f5f7", tealMid:"#4ec4cf", yellowLight:"#fffbf0", yellowMid:"#ffe9a0", dark:"#1a2e30", mid:"#4a6366", light:"#8aa5a8", border:"#dde8e9", bg:"#f7fafa" };
+const C = { red:"#dc6059", yellow:"#ffdc8b", teal:"#0097a7", redLight:"#fdf1f0", redMid:"#f5b8b5", tealLight:"#e0f5f7", tealMid:"#4ec4cf", yellowLight:"#fffbf0", yellowMid:"#ffe9a0", dark:"#1a2e30", mid:"#4a6366", light:"#8aa5a8", border:"#dde8e9", bg:"#f7fafa", sand:"#ddd8cb" };
 const PIE_COLORS = [C.red, C.teal, C.yellow, "#e8927c","#33b5c2","#a0d8de","#f5c842","#6dd6a0"];
 
 const fmt2 = n => Number(n).toFixed(2);
@@ -90,9 +90,32 @@ function SectionTitle({ children, sub }) {
 }
 
 const HOW_TO = [
-  { icon:"📋", title:"Fill in the inputs", body:"Select the state, geography level (State / District / Block), and the type of commodity currently being supplied (wheat grain or flour). Then enter the total number of beneficiaries and the monthly kg allocation per person." },
-  { icon:"📊", title:"Interpret the results", body:"The calculator shows your target annual volume, the base unit cost per kg, and the total program cost. The cost breakdown table lists every cost category. Rows highlighted in yellow are additional costs introduced by switching to fortified atta — these also appear in the pie chart on the right." },
-  { icon:"✏️", title:"Edit or add costs", body:"The default costs come from an FFI case study in Haryana. Click 'Edit costs' to enter your own unit costs for any category. Use '+ Add cost category' to include costs specific to your context (e.g. storage, last-mile delivery). All changes update the total automatically." },
+  {
+    icon:"📋", title:"Fill in the inputs",
+    points:[
+      "Select the state and geography level (State, District, or Block)",
+      "Choose the commodity currently being supplied — wheat grain or wheat flour",
+      "Enter the total number of beneficiaries and their monthly kg allocation",
+    ]
+  },
+  {
+    icon:"📊", title:"Interpret the results",
+    points:[
+      "The top cards show target annual volume, cost per kg, and total program cost",
+      "The cost breakdown table lists every cost category",
+      "Rows highlighted in yellow are additional costs introduced by switching to fortified atta",
+      "These additional costs are also shown in the pie chart on the right",
+    ]
+  },
+  {
+    icon:"✏️", title:"Edit or add costs",
+    points:[
+      "Default costs come from an FFI case study in Haryana — use them as a starting point",
+      "Click 'Edit costs' to enter your own unit costs for any category",
+      "Use '+ Add cost category' to include costs specific to your context (e.g. storage)",
+      "All changes update the total automatically",
+    ]
+  },
 ];
 
 export default function App() {
@@ -112,12 +135,11 @@ export default function App() {
   const isGrain = supplyType === "Wheat Grain";
 
   const handleLevelChange = lvl => { setGeoLevel(lvl); if (!customMode) setCustomCosts({...DEFAULTS[lvl]}); };
-
   const handleReset = () => { setCustomCosts({...DEFAULTS[geoLevel]}); setExtraCats([]); };
 
   const addCategory = () => {
     if (!newLabel.trim()) return;
-    setExtraCats(p=>[...p, { id: Date.now(), label:newLabel.trim(), cost: parseFloat(newCost)||0 }]);
+    setExtraCats(p=>[...p, { id:Date.now(), label:newLabel.trim(), cost:parseFloat(newCost)||0 }]);
     setNewLabel(""); setNewCost("");
   };
 
@@ -135,21 +157,29 @@ export default function App() {
   const unitTotal = baseUnitTotal + extraUnitTotal;
   const totalCost = unitTotal * targetVol;
 
-  const additionalTotal = [...additionalKeys.map(k=>parseFloat(costs[k])||0), ...extraCats.map(e=>e.cost)].reduce((s,v)=>s+v,0)*targetVol;
+  const additionalUnitTotal = additionalKeys.reduce((s,k)=>s+(parseFloat(costs[k])||0),0) + extraUnitTotal;
+  const additionalTotal = additionalUnitTotal * targetVol;
+
+  const flourFortCost = (parseFloat(costs["fortification"])||0) * targetVol;
 
   const pieData = [
     ...additionalKeys.map(k=>({ label:ALL_COSTS.find(c=>c.key===k)?.label||k, value:(parseFloat(costs[k])||0)*targetVol })),
     ...extraCats.map(e=>({ label:e.label, value:e.cost*targetVol }))
   ].filter(d=>d.value>0);
 
+  const volMT = targetVol > 0 ? (targetVol/1000).toFixed(2) : null;
   const cardShadow = "0 1px 4px rgba(0,151,167,0.06)";
+
+  const bubbleText = isGrain
+    ? `This total covers all costs including procurement and distribution costs you may already be incurring. Your net additional cost for switching to fortified atta is ${fmtBig(additionalTotal)}.`
+    : `This total includes milling, packaging, and other costs you already incur. Your net additional cost for adding fortification is ${fmtBig(flourFortCost)}.`;
 
   return (
     <>
       <style>{globalStyle}</style>
 
       {/* Header */}
-      <div style={{background:`linear-gradient(135deg, ${C.red} 0%, #c94d46 100%)`,padding:"2rem 2rem 1.75rem",color:"#fff"}}>
+      <div style={{background:`linear-gradient(135deg, ${C.red} 0%, #c94d46 100%)`,padding:"2rem 2rem 1.75rem"}}>
         <div style={{maxWidth:920,margin:"0 auto"}}>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
             <span style={{fontSize:28}}>🌾</span>
@@ -161,7 +191,7 @@ export default function App() {
 
       <div style={{maxWidth:920,margin:"0 auto",padding:"1.5rem 1.5rem 3rem"}}>
 
-        {/* How to use — collapsible */}
+        {/* How to use */}
         <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,marginBottom:"1rem",boxShadow:cardShadow,overflow:"hidden"}}>
           <button onClick={()=>setGuideOpen(o=>!o)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"1rem 1.5rem",background:"none",border:"none",textAlign:"left"}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -172,15 +202,19 @@ export default function App() {
           </button>
           {guideOpen&&(
             <div style={{padding:"0 1.5rem 1.25rem",borderTop:`1px solid ${C.border}`}}>
-              <p style={{fontSize:13,color:C.mid,margin:"1rem 0 1.25rem",lineHeight:1.7}}>This tool helps program managers and stakeholders estimate the annual cost of introducing fortified atta into an existing food distribution program. Follow the steps below to get started.</p>
+              <p style={{fontSize:13,color:C.mid,margin:"1rem 0 1.25rem",lineHeight:1.7}}>This tool helps program managers and stakeholders estimate the annual cost of introducing fortified atta into an existing food distribution program.</p>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12}}>
                 {HOW_TO.map((h,i)=>(
                   <div key={i} style={{background:C.bg,borderRadius:10,padding:"1rem 1.1rem",border:`1px solid ${C.border}`}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
                       <span style={{fontSize:18}}>{h.icon}</span>
                       <span style={{fontSize:13,fontWeight:600,color:C.dark}}>{h.title}</span>
                     </div>
-                    <p style={{fontSize:12,color:C.mid,lineHeight:1.65,margin:0}}>{h.body}</p>
+                    <ul style={{paddingLeft:16,margin:0}}>
+                      {h.points.map((pt,j)=>(
+                        <li key={j} style={{fontSize:12,color:C.mid,lineHeight:1.65,marginBottom:4}}>{pt}</li>
+                      ))}
+                    </ul>
                   </div>
                 ))}
               </div>
@@ -207,11 +241,11 @@ export default function App() {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1.3fr",gap:12,marginBottom:"1rem"}}>
           <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"1.1rem 1.25rem",boxShadow:cardShadow}}>
             <p style={{fontSize:11,fontWeight:600,color:C.mid,textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 6px"}}>Target volume / year</p>
-            <p style={{fontSize:26,fontWeight:600,color:C.dark,margin:0,lineHeight:1.1}}>{targetVol>0?`${(targetVol/1000).toFixed(1)}t`:"—"}</p>
-            {targetVol>0&&<p style={{fontSize:11,color:C.light,margin:"3px 0 0"}}>{targetVol.toLocaleString("en-IN")} kg</p>}
+            <p style={{fontSize:26,fontWeight:600,color:C.dark,margin:0,lineHeight:1.1}}>{volMT ? `${volMT} MT` : "—"}</p>
+            {volMT&&<p style={{fontSize:11,color:C.light,margin:"3px 0 0"}}>{targetVol.toLocaleString("en-IN")} kg</p>}
           </div>
           <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"1.1rem 1.25rem",boxShadow:cardShadow}}>
-            <p style={{fontSize:11,fontWeight:600,color:C.mid,textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 6px"}}>Base unit cost</p>
+            <p style={{fontSize:11,fontWeight:600,color:C.mid,textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 6px"}}>Cost / kg</p>
             <p style={{fontSize:26,fontWeight:600,color:C.dark,margin:0,lineHeight:1.1}}>₹{fmt2(unitTotal)}<span style={{fontSize:13,fontWeight:400,color:C.light}}> /kg</span></p>
             <p style={{fontSize:11,color:C.light,margin:"3px 0 0"}}>{geoLevel} level</p>
           </div>
@@ -223,6 +257,15 @@ export default function App() {
             <p style={{fontSize:11,color:"rgba(255,255,255,0.65)",margin:"3px 0 0"}}>{geoName||"—"} · {geoLevel}</p>
           </div>
         </div>
+
+        {/* Context bubble */}
+        {targetVol > 0 && (
+          <div style={{background:C.sand,borderRadius:10,padding:"10px 16px",marginBottom:"1rem",border:`1px solid #c9c4b8`}}>
+            <p style={{fontSize:12,color:"#4a4438",lineHeight:1.65,margin:0}}>
+              <strong>💡 Note for {isGrain?"wheat grain":"wheat flour"} suppliers:</strong> {bubbleText}
+            </p>
+          </div>
+        )}
 
         {/* Breakdown + Additional */}
         <div style={{display:"grid",gridTemplateColumns:"1.6fr 1fr",gap:12,marginBottom:"1rem",alignItems:"start"}}>
@@ -263,7 +306,6 @@ export default function App() {
                     </tr>
                   );
                 })}
-                {/* Extra categories */}
                 {extraCats.map(e=>(
                   <tr key={e.id} style={{borderBottom:`1px solid ${C.border}`,background:C.yellowLight}}>
                     <td style={{padding:"8px 0"}}>
@@ -288,8 +330,6 @@ export default function App() {
                 </tr>
               </tfoot>
             </table>
-
-            {/* Add category row */}
             <div style={{marginTop:12,padding:"10px 12px",background:C.bg,borderRadius:8,border:`1px dashed ${C.border}`}}>
               <p style={{fontSize:11,fontWeight:600,color:C.mid,textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 8px"}}>+ Add cost category</p>
               <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
@@ -298,7 +338,6 @@ export default function App() {
                 <button onClick={addCategory} style={{fontSize:12,padding:"7px 14px",background:C.teal,color:"#fff",border:"none",borderRadius:8,fontWeight:500,flexShrink:0}}>Add</button>
               </div>
             </div>
-
             {(customMode||extraCats.length>0)&&(
               <button onClick={handleReset} style={{marginTop:10,fontSize:12,padding:"6px 12px",background:C.redLight,color:C.red,border:`1px solid ${C.redMid}`,borderRadius:7,fontWeight:500}}>
                 Reset to defaults
@@ -306,7 +345,6 @@ export default function App() {
             )}
           </div>
 
-          {/* Additional costs */}
           <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:cardShadow}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
               <p style={{fontSize:15,fontWeight:600,color:C.dark,margin:0}}>Additional costs</p>
@@ -365,7 +403,7 @@ export default function App() {
           </table>
           <div style={{marginTop:14,padding:"10px 14px",background:C.yellowLight,borderRadius:8,border:`1px solid ${C.yellowMid}`}}>
             <p style={{fontSize:12,color:"#7a5c00",margin:0,lineHeight:1.6}}>
-              <strong>Note:</strong> Default costs are sourced from an FFI case study in Haryana. They are provided as a starting point — use <em>Edit costs</em> to enter your own unit costs, and <em>Add cost category</em> to include any additional costs specific to your context.
+              <strong>Note:</strong> Default costs are sourced from the <em>Wheat Flour Supply Chain Analysis</em> by the Food Fortification Initiative (FFI), State of Haryana, India, December 2016. They are provided as a starting point — use <em>Edit costs</em> to enter your own unit costs, and <em>Add cost category</em> to include any additional costs specific to your context.
             </p>
           </div>
         </div>
