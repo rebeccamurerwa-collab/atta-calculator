@@ -258,6 +258,7 @@ export default function App() {
   const [newLabel, setNewLabel] = useState("");
   const [newCost, setNewCost] = useState("");
   const [guideOpen, setGuideOpen] = useState(false);
+  const [volumeUnit, setVolumeUnit] = useState("kg"); // "kg" or "MT"
 
   const costs = customMode ? customCosts : DEFAULT_COSTS;
   const isGrain = supplyType === "Wheat Grain";
@@ -273,19 +274,34 @@ export default function App() {
   const removeExtra = id => setExtraCats(p=>p.filter(e=>e.id!==id));
   const updateExtra = (id,val) => setExtraCats(p=>p.map(e=>e.id===id?{...e,cost:parseFloat(val)||0}:e));
 
+  const handleVolumeUnitToggle = (newUnit) => {
+    if (newUnit === volumeUnit) return;
+    setVolumeUnit(newUnit);
+    if (totalMonthlyKg !== "") {
+      const val = parseFloat(totalMonthlyKg);
+      if (!isNaN(val)) {
+        if (newUnit === "MT") setTotalMonthlyKg((val / 1000).toString());
+        else setTotalMonthlyKg((val * 1000).toString());
+      }
+    }
+  };
+
   const targetVol = useMemo(()=>{
     const tm=parseFloat(totalMonthlyKg);
-    if (tm) return tm*12;
+    const tmKg = tm ? (volumeUnit === "MT" ? tm * 1000 : tm) : 0;
+    if (tmKg) return tmKg*12;
     const p=parseFloat(population), k=parseFloat(kgPerBenef);
     if (p&&k) return p*k*12;
     return 0;
-  },[population,kgPerBenef,totalMonthlyKg]);
+  },[population,kgPerBenef,totalMonthlyKg,volumeUnit]);
 
   const derivedPerCapita = useMemo(()=>{
-    const tm=parseFloat(totalMonthlyKg), p=parseFloat(population);
-    if (tm&&p) return (tm/p).toFixed(2);
+    const tm=parseFloat(totalMonthlyKg);
+    const tmKg = tm ? (volumeUnit === "MT" ? tm * 1000 : tm) : 0;
+    const p=parseFloat(population);
+    if (tmKg&&p) return (tmKg/p).toFixed(2);
     return null;
-  },[totalMonthlyKg,population]);
+  },[totalMonthlyKg,population,volumeUnit]);
 
   const visibleCosts = ALL_COSTS.filter(c=>isGrain?true:c.flourAdd);
   const additionalKeys = ALL_COSTS.filter(c=>isGrain?c.grainAdd:c.flourAdd).map(c=>c.key);
@@ -408,8 +424,18 @@ export default function App() {
                     <span style={{fontSize:13,color:C.light,fontWeight:500}}>— or —</span>
                   </div>
                   <div>
-                    <Label>Total monthly consumption (kg)</Label>
-                    <input type="number" placeholder="e.g. 250,000" value={totalMonthlyKg} onChange={e=>setTotalMonthlyKg(e.target.value)}/>
+                    <Label>Total monthly consumption</Label>
+                    <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                      <input type="number" placeholder={volumeUnit==="MT"?"e.g. 250":"e.g. 250,000"} value={totalMonthlyKg} onChange={e=>setTotalMonthlyKg(e.target.value)} style={{flex:1}}/>
+                      <div style={{display:"flex",borderRadius:8,border:`1.5px solid ${C.border}`,overflow:"hidden",flexShrink:0}}>
+                        {["kg","MT"].map(u=>(
+                          <button key={u} onClick={()=>handleVolumeUnitToggle(u)}
+                            style={{padding:"7px 12px",fontSize:12,fontWeight:600,border:"none",cursor:"pointer",background:volumeUnit===u?C.teal:"#f5f8f8",color:volumeUnit===u?"#fff":C.mid,transition:"background 0.15s"}}>
+                            {u}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                     {derivedPerCapita&&population&&<p style={{fontSize:11,color:C.teal,margin:"4px 0 0"}}>≈ {derivedPerCapita} kg / beneficiary / month</p>}
                   </div>
                 </div>
