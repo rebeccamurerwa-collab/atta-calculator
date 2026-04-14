@@ -381,7 +381,76 @@ async function generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal
   // Note
   doc.setFontSize(7.5); doc.setFont("helvetica","italic"); doc.setTextColor(...mid);
   doc.text(`Full program cost including procurement: ${fmtBig(fullTotalCost)}`, ml, y);
-  y += 10;
+  y += 12;
+
+  // Pie chart section
+  doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(...light);
+  doc.text("COST DISTRIBUTION", ml, y); y += 5;
+
+  const pieData = [
+    ...visibleCosts.map(({key,label}) => ({ label, value:(parseFloat(costs[key])||0)*targetVol })),
+    ...extraCats.map(e => ({ label:e.label, value:e.cost*targetVol }))
+  ].filter(d=>d.value>0);
+
+  const PIE_COLORS_PDF = [
+    [220,96,89],[0,151,167],[255,216,203],[78,196,207],[245,184,181],[99,214,160],[255,220,139],[232,146,124]
+  ];
+
+  if (pieData.length > 0) {
+    const total = pieData.reduce((s,d)=>s+d.value,0);
+    const cx = ml + 28, cy = y + 24, r = 20, ir = 9;
+    let startAngle = -Math.PI/2;
+
+    pieData.forEach((d,i) => {
+      const slice = (d.value/total) * 2 * Math.PI;
+      const endAngle = startAngle + slice;
+      const color = PIE_COLORS_PDF[i % PIE_COLORS_PDF.length];
+
+      // Draw slice using lines to approximate arc
+      const steps = Math.max(8, Math.round(slice * 20));
+      const points = [];
+      // outer arc
+      for (let s=0; s<=steps; s++) {
+        const a = startAngle + (slice * s/steps);
+        points.push([cx + r*Math.cos(a), cy + r*Math.sin(a)]);
+      }
+      // inner arc reversed
+      for (let s=steps; s>=0; s--) {
+        const a = startAngle + (slice * s/steps);
+        points.push([cx + ir*Math.cos(a), cy + ir*Math.sin(a)]);
+      }
+
+      doc.setFillColor(...color);
+      doc.setDrawColor(255,255,255);
+      doc.lines(
+        points.slice(1).map((p,j) => [p[0]-points[j][0], p[1]-points[j][1]]),
+        points[0][0], points[0][1], [1,1], "FD", true
+      );
+
+      startAngle = endAngle;
+    });
+
+    // White centre hole
+    doc.setFillColor(255,255,255);
+    doc.circle(cx, cy, ir, "F");
+
+    // Legend
+    const legendX = cx + r + 8;
+    let legendY = y + 4;
+    pieData.forEach((d,i) => {
+      const color = PIE_COLORS_PDF[i % PIE_COLORS_PDF.length];
+      const pct = Math.round((d.value/total)*100);
+      doc.setFillColor(...color);
+      doc.circle(legendX + 2, legendY, 2, "F");
+      doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
+      doc.text(d.label.length > 22 ? d.label.substring(0,22)+"…" : d.label, legendX+6, legendY+1);
+      doc.setFont("helvetica","bold"); doc.setTextColor(...dark);
+      doc.text(`${pct}%`, ml+cw, legendY+1, {align:"right"});
+      legendY += 7;
+    });
+
+    y = Math.max(y + 52, legendY + 4);
+  }
 
   // Footer
   const footerY = 287;
