@@ -692,25 +692,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Export PDF button */}
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:"1rem",flexWrap:"wrap"}}>
-              <div style={{flex:"1 1 260px"}}>
-                <input
-                  type="text"
-                  placeholder="Report title (e.g. TAPF Gujarat – Fortified Atta Budget)"
-                  value={reportTitle}
-                  onChange={e=>setReportTitle(e.target.value)}
-                  style={{width:"100%",fontSize:12,padding:"10px 12px",borderRadius:9,border:`1.5px solid ${C.border}`,color:C.dark}}
-                />
-              </div>
-              <button
-                onClick={()=>generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal, additionalTotal, fullTotalCost, costs, visibleCosts, extraCats, isGrain, volumeUnit, totalMonthlyKg, reportTitle })}
-                disabled={!targetVol}
-                style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",fontSize:13,fontWeight:600,borderRadius:9,border:"none",cursor:targetVol?"pointer":"not-allowed",background:targetVol?C.red:"#e0e0e0",color:"#fff",opacity:targetVol?1:0.6,transition:"opacity 0.15s",flexShrink:0}}>
-                <span style={{fontSize:15}}>⬇</span> Export PDF report
-              </button>
-            </div>
-
             {/* Context bubble */}
             {targetVol>0&&(
               <div style={{background:C.sand,borderRadius:10,padding:"10px 16px",marginBottom:"1rem",border:`1px solid #c9c4b8`}}>
@@ -855,6 +836,29 @@ export default function App() {
                   <strong>Note:</strong> Default costs are sourced from the <em>Wheat Flour Supply Chain Analysis</em> by the Food Fortification Initiative (FFI), State of Haryana, India, December 2016. They are a starting point — costs will vary by state and context. Use <em>Edit costs</em> to enter figures that reflect your program.
                 </p>
               </div>
+            </div>
+
+            {/* Export PDF */}
+            <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:cardShadow}}>
+              <SectionTitle sub="Customise and download a report for meetings or presentations">Export report</SectionTitle>
+              <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                <div style={{flex:"1 1 260px"}}>
+                  <input
+                    type="text"
+                    placeholder="Report title (e.g. TAPF Gujarat – Fortified Atta Budget)"
+                    value={reportTitle}
+                    onChange={e=>setReportTitle(e.target.value)}
+                    style={{width:"100%",fontSize:12,padding:"10px 12px",borderRadius:9,border:`1.5px solid ${C.border}`,color:C.dark}}
+                  />
+                </div>
+                <button
+                  onClick={()=>generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal, additionalTotal, fullTotalCost, costs, visibleCosts, extraCats, isGrain, volumeUnit, totalMonthlyKg, reportTitle })}
+                  disabled={!targetVol}
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",fontSize:13,fontWeight:600,borderRadius:9,border:"none",cursor:targetVol?"pointer":"not-allowed",background:targetVol?C.red:"#e0e0e0",color:"#fff",opacity:targetVol?1:0.6,transition:"opacity 0.15s",flexShrink:0}}>
+                  <span style={{fontSize:15}}>⬇</span> Export PDF report
+                </button>
+              </div>
+              {!targetVol&&<p style={{fontSize:11,color:C.light,margin:"8px 0 0"}}>Enter volume data above to enable export.</p>}
             </div>
           </>
         )}
