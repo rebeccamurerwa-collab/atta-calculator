@@ -247,18 +247,26 @@ function MillTab() {
   );
 }
 
-async function generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal, additionalTotal, fullTotalCost, costs, visibleCosts, extraCats, isGrain, volumeUnit, totalMonthlyKg }) {
+async function generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal, additionalTotal, fullTotalCost, costs, visibleCosts, extraCats, isGrain, volumeUnit, totalMonthlyKg, reportTitle }) {
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
   const W = 210, ml = 18, mr = 18, cw = W - ml - mr;
   const red = [220,96,89], teal = [0,151,167], peach = [255,216,203], dark = [26,46,48], mid = [74,99,102], light = [138,165,168], lightBg = [247,250,250], peachLight = [255,248,246];
 
   const fmt2 = n => Number(n).toFixed(2);
   const fmtBig = n => {
-    if (!n||n===0) return "₹0.00";
+    if (!n||n===0) return "Rs.0.00";
     if (n>=1e7) return `Rs.${(n/1e7).toFixed(2)} Cr`;
     if (n>=1e5) return `Rs.${(n/1e5).toFixed(2)} L`;
     return `Rs.${Math.round(n).toLocaleString("en-IN")}`;
   };
+  const fmtAnnual = n => {
+    if (!n||n===0) return "Rs.0.00";
+    return fmtBig(n);
+  };
+
+  const displayTitle = reportTitle && reportTitle.trim()
+    ? reportTitle.trim()
+    : "Fortified atta — budget report";
 
   let y = 0;
 
@@ -270,7 +278,7 @@ async function generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal
   doc.setFontSize(9); doc.setFont("helvetica","normal");
   doc.text("FORTIFY HEALTH", ml+26, 13);
   doc.setFontSize(16); doc.setFont("helvetica","bold");
-  doc.text("Fortified atta — budget report", ml+26, 22);
+  doc.text(displayTitle, ml+26, 22);
   doc.setFontSize(8); doc.setFont("helvetica","normal");
   doc.text(`Generated: ${new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})}`, W-mr, 13, {align:"right"});
   y = 46;
@@ -353,7 +361,7 @@ async function generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal
     doc.text(label, ml+3, y+5.5);
     doc.setTextColor(...mid);
     doc.text(fmt2(uc), ml+cw*0.65, y+5.5, {align:"right"});
-    doc.text(fmtBig(uc*targetVol), ml+cw, y+5.5, {align:"right"});
+    doc.text(fmtAnnual(uc*targetVol), ml+cw, y+5.5, {align:"right"});
     y += 8;
   });
 
@@ -365,7 +373,7 @@ async function generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal
     doc.text(e.label, ml+3, y+5.5);
     doc.setTextColor(...mid);
     doc.text(fmt2(e.cost), ml+cw*0.65, y+5.5, {align:"right"});
-    doc.text(fmtBig(e.cost*targetVol), ml+cw, y+5.5, {align:"right"});
+    doc.text(fmtAnnual(e.cost*targetVol), ml+cw, y+5.5, {align:"right"});
     y += 8;
   });
 
@@ -476,6 +484,7 @@ export default function App() {
   const [newCost, setNewCost] = useState("");
   const [guideOpen, setGuideOpen] = useState(false);
   const [volumeUnit, setVolumeUnit] = useState("kg");
+  const [reportTitle, setReportTitle] = useState("");
 
   const costs = customMode ? customCosts : DEFAULT_COSTS;
   const isGrain = supplyType === "Wheat Grain";
@@ -684,11 +693,20 @@ export default function App() {
             </div>
 
             {/* Export PDF button */}
-            <div style={{display:"flex",justifyContent:"flex-end",marginBottom:"1rem"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:"1rem",flexWrap:"wrap"}}>
+              <div style={{flex:"1 1 260px"}}>
+                <input
+                  type="text"
+                  placeholder="Report title (e.g. TAPF Gujarat – Fortified Atta Budget)"
+                  value={reportTitle}
+                  onChange={e=>setReportTitle(e.target.value)}
+                  style={{width:"100%",fontSize:12,padding:"10px 12px",borderRadius:9,border:`1.5px solid ${C.border}`,color:C.dark}}
+                />
+              </div>
               <button
-                onClick={()=>generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal, additionalTotal, fullTotalCost, costs, visibleCosts, extraCats, isGrain, volumeUnit, totalMonthlyKg })}
+                onClick={()=>generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal, additionalTotal, fullTotalCost, costs, visibleCosts, extraCats, isGrain, volumeUnit, totalMonthlyKg, reportTitle })}
                 disabled={!targetVol}
-                style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",fontSize:13,fontWeight:600,borderRadius:9,border:"none",cursor:targetVol?"pointer":"not-allowed",background:targetVol?C.red:"#e0e0e0",color:"#fff",opacity:targetVol?1:0.6,transition:"opacity 0.15s"}}>
+                style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",fontSize:13,fontWeight:600,borderRadius:9,border:"none",cursor:targetVol?"pointer":"not-allowed",background:targetVol?C.red:"#e0e0e0",color:"#fff",opacity:targetVol?1:0.6,transition:"opacity 0.15s",flexShrink:0}}>
                 <span style={{fontSize:15}}>⬇</span> Export PDF report
               </button>
             </div>
