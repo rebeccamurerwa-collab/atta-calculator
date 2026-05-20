@@ -51,8 +51,8 @@ const SCORE = {
   modern:{ compliance:3, infrastructure:3, shelfLife:3, reach:3, automation:3 },
 };
 
-const C = { red:"#dc6059", yellow:"#ffdc8b", teal:"#0097a7", redLight:"#fdf1f0", redMid:"#f5b8b5", tealLight:"#e0f5f7", tealMid:"#4ec4cf", yellowLight:"#fffbf0", yellowMid:"#ffe9a0", dark:"#1a2e30", mid:"#4a6366", light:"#8aa5a8", border:"#dde8e9", bg:"#f7fafa", sand:"#ddd8cb" };
-const PIE_COLORS = [C.red, C.teal, C.yellow, "#e8927c","#33b5c2","#a0d8de","#f5c842","#6dd6a0"];
+const C = { red:"#dc6059", yellow:"#ffdc8b", teal:"#0097a7", redLight:"#fff2f0", redMid:"#f5b8b5", tealLight:"#ffd8cb", tealMid:"#f0a898", yellowLight:"#fffbf0", yellowMid:"#ffe9a0", dark:"#2d1a18", mid:"#7a4f47", light:"#b08880", border:"#f0d0c8", bg:"#fff8f6", sand:"#ffd8cb" };
+const PIE_COLORS = [C.red, C.teal, C.yellow, "#e8927c","#f0a898","#ffd8cb","#f5c842","#6dd6a0"];
 
 const fmt2 = n => Number(n).toFixed(2);
 const fmtBig = n => {
@@ -67,7 +67,7 @@ const globalStyle = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, sans-serif; background: ${C.bg}; color: ${C.dark}; min-height: 100vh; }
   input, select { font-family: inherit; font-size: 13px; padding: 9px 12px; border: 1.5px solid ${C.border}; border-radius: 8px; outline: none; background: #fff; color: ${C.dark}; width: 100%; transition: border-color 0.15s, box-shadow 0.15s; }
-  input:focus, select:focus { border-color: ${C.teal}; box-shadow: 0 0 0 3px rgba(0,151,167,0.12); }
+  input:focus, select:focus { border-color: ${C.red}; box-shadow: 0 0 0 3px rgba(220,96,89,0.12); }
   input::placeholder { color: ${C.light}; }
   button { font-family: inherit; cursor: pointer; }
 `;
@@ -127,7 +127,7 @@ function ScoreDots({ val }) {
   return (
     <div style={{display:"flex",gap:3,justifyContent:"center"}}>
       {[1,2,3].map(i=>(
-        <div key={i} style={{width:8,height:8,borderRadius:"50%",background:i<=val?C.teal:C.border}}/>
+        <div key={i} style={{width:8,height:8,borderRadius:"50%",background:i<=val?C.red:C.border}}/>
       ))}
     </div>
   );
@@ -164,20 +164,20 @@ function MillTab() {
   });
   return (
     <div>
-      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
+      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 1px 4px rgba(220,96,89,0.06)"}}>
         <p style={{fontSize:13,color:C.mid,margin:"0 0 14px",lineHeight:1.7}}>Select a mill type to explore its suitability for your fortified atta program. Information is drawn from the <em>Wheat Flour Supply Chain Analysis</em>, Food Fortification Initiative (FFI), Haryana, 2016.</p>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
           {MILLS.map(m=>(
             <button key={m.id} onClick={()=>setSelectedMill(m.id)}
-              style={{padding:"14px 10px",borderRadius:10,border:`2px solid ${selectedMill===m.id?C.teal:C.border}`,background:selectedMill===m.id?C.tealLight:"#fff",cursor:"pointer",textAlign:"center"}}>
-              <p style={{fontSize:15,fontWeight:600,color:selectedMill===m.id?C.teal:C.dark,margin:"0 0 3px"}}>{m.label}</p>
+              style={{padding:"14px 10px",borderRadius:10,border:`2px solid ${selectedMill===m.id?C.red:C.border}`,background:selectedMill===m.id?C.tealLight:"#fff",cursor:"pointer",textAlign:"center"}}>
+              <p style={{fontSize:15,fontWeight:600,color:selectedMill===m.id?C.red:C.dark,margin:"0 0 3px"}}>{m.label}</p>
               <p style={{fontSize:11,color:C.mid,margin:0}}>{m.sub}</p>
             </button>
           ))}
         </div>
       </div>
       <div style={{background:C.tealLight,border:`1px solid ${C.tealMid}`,borderRadius:12,padding:"1rem 1.25rem",marginBottom:"1rem"}}>
-        <p style={{fontSize:13,fontWeight:600,color:C.teal,margin:"0 0 6px"}}>{mill.label} — {mill.sub}</p>
+        <p style={{fontSize:13,fontWeight:600,color:C.red,margin:"0 0 6px"}}>{mill.label} — {mill.sub}</p>
         <p style={{fontSize:13,color:"#2a5f66",lineHeight:1.7,margin:"0 0 14px"}}>{MILL_NOTES[selectedMill]}</p>
         <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8}}>
           {[["Compliance","compliance"],["Infrastructure","infrastructure"],["Shelf life","shelfLife"],["Distribution","reach"],["Automation","automation"]].map(([label,key])=>(
@@ -189,7 +189,7 @@ function MillTab() {
         </div>
         <p style={{fontSize:10,color:C.light,margin:"8px 0 0"}}>● ● ● High &nbsp;·&nbsp; ● ● ○ Medium &nbsp;·&nbsp; ● ○ ○ Low</p>
       </div>
-      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
+      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 1px 4px rgba(220,96,89,0.06)"}}>
         <SectionTitle sub="Product quality and regulatory compliance">Quality & specifications</SectionTitle>
         <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
@@ -198,7 +198,7 @@ function MillTab() {
                 <th style={{textAlign:"left",padding:"8px 12px 8px 0",color:C.light,fontWeight:500,minWidth:140}}>Consideration</th>
                 {MILLS.map(m=>(
                   <th key={m.id} style={{textAlign:"left",padding:"8px 12px",fontWeight:600,fontSize:11,minWidth:160}}>
-                    <span style={{padding:"3px 10px",borderRadius:20,background:selectedMill===m.id?C.tealLight:"#f5f8f8",color:selectedMill===m.id?C.teal:C.mid,border:`1px solid ${selectedMill===m.id?C.tealMid:C.border}`}}>{m.label}</span>
+                    <span style={{padding:"3px 10px",borderRadius:20,background:selectedMill===m.id?C.tealLight:C.bg,color:selectedMill===m.id?C.red:C.mid,border:`1px solid ${selectedMill===m.id?C.tealMid:C.border}`}}>{m.label}</span>
                   </th>
                 ))}
               </tr>
@@ -216,7 +216,7 @@ function MillTab() {
           </table>
         </div>
       </div>
-      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
+      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:"0 1px 4px rgba(220,96,89,0.06)"}}>
         <SectionTitle sub="Procurement, distribution and operational considerations">Operational aspects</SectionTitle>
         <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
@@ -225,7 +225,7 @@ function MillTab() {
                 <th style={{textAlign:"left",padding:"8px 12px 8px 0",color:C.light,fontWeight:500,minWidth:140}}>Consideration</th>
                 {MILLS.map(m=>(
                   <th key={m.id} style={{textAlign:"left",padding:"8px 12px",fontWeight:600,fontSize:11,minWidth:160}}>
-                    <span style={{padding:"3px 10px",borderRadius:20,background:selectedMill===m.id?C.tealLight:"#f5f8f8",color:selectedMill===m.id?C.teal:C.mid,border:`1px solid ${selectedMill===m.id?C.tealMid:C.border}`}}>{m.label}</span>
+                    <span style={{padding:"3px 10px",borderRadius:20,background:selectedMill===m.id?C.tealLight:C.bg,color:selectedMill===m.id?C.red:C.mid,border:`1px solid ${selectedMill===m.id?C.tealMid:C.border}`}}>{m.label}</span>
                   </th>
                 ))}
               </tr>
@@ -250,7 +250,7 @@ function MillTab() {
 async function generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal, additionalTotal, fullTotalCost, costs, visibleCosts, extraCats, isGrain, volumeUnit, totalMonthlyKg, reportTitle }) {
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
   const W = 210, ml = 18, mr = 18, cw = W - ml - mr;
-  const red = [220,96,89], teal = [0,151,167], peach = [255,216,203], dark = [26,46,48], mid = [74,99,102], light = [138,165,168], lightBg = [247,250,250], peachLight = [255,248,246];
+  const red = [220,96,89], teal = [0,151,167], peach = [255,216,203], dark = [45,26,24], mid = [122,79,71], light = [176,136,128], lightBg = [255,248,246], peachLight = [255,240,235];
 
   const fmt2 = n => Number(n).toFixed(2);
   const fmtBig = n => {
@@ -548,7 +548,7 @@ export default function App() {
 
   const volMT = targetVol>0 ? (targetVol/1000).toFixed(2)+" MT" : null;
   const costPerKg = additionalUnitTotal;
-  const cardShadow = "0 1px 4px rgba(0,151,167,0.06)";
+  const cardShadow = "0 1px 4px rgba(220,96,89,0.06)";
 
   const tabs = [
     { id:"calculator", label:"💰 Budget calculator" },
@@ -569,7 +569,7 @@ export default function App() {
             {tabs.map(t=>(
               <button key={t.id} onClick={()=>setActiveTab(t.id)}
                 style={{padding:"10px 20px",fontSize:13,fontWeight:500,border:"none",borderRadius:"8px 8px 0 0",cursor:"pointer",
-                  background:activeTab===t.id?"#f7fafa":"rgba(255,255,255,0.15)",
+                  background:activeTab===t.id?C.bg:"rgba(255,255,255,0.15)",
                   color:activeTab===t.id?C.dark:"rgba(255,255,255,0.85)"}}>
                 {t.label}
               </button>
@@ -614,8 +614,8 @@ export default function App() {
             {/* Inputs */}
             <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:cardShadow}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-                <div style={{width:6,height:20,background:C.teal,borderRadius:3}}/>
-                <p style={{fontSize:13,fontWeight:600,color:C.teal,margin:0,textTransform:"uppercase",letterSpacing:"0.06em"}}>Input parameters</p>
+                <div style={{width:6,height:20,background:C.red,borderRadius:3}}/>
+                <p style={{fontSize:13,fontWeight:600,color:C.red,margin:0,textTransform:"uppercase",letterSpacing:"0.06em"}}>Input parameters</p>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14,marginBottom:14}}>
                 <div>
@@ -656,13 +656,13 @@ export default function App() {
                       <div style={{display:"flex",borderRadius:8,border:`1.5px solid ${C.border}`,overflow:"hidden",flexShrink:0}}>
                         {["kg","MT"].map(u=>(
                           <button key={u} onClick={()=>handleVolumeUnitToggle(u)}
-                            style={{padding:"7px 12px",fontSize:12,fontWeight:600,border:"none",cursor:"pointer",background:volumeUnit===u?C.teal:"#f5f8f8",color:volumeUnit===u?"#fff":C.mid,transition:"background 0.15s"}}>
+                            style={{padding:"7px 12px",fontSize:12,fontWeight:600,border:"none",cursor:"pointer",background:volumeUnit===u?C.red:C.bg,color:volumeUnit===u?"#fff":C.mid,transition:"background 0.15s"}}>
                             {u}
                           </button>
                         ))}
                       </div>
                     </div>
-                    {derivedPerCapita&&population&&<p style={{fontSize:11,color:C.teal,margin:"4px 0 0"}}>≈ {derivedPerCapita} kg / beneficiary / month</p>}
+                    {derivedPerCapita&&population&&<p style={{fontSize:11,color:C.red,margin:"4px 0 0"}}>≈ {derivedPerCapita} kg / beneficiary / month</p>}
                   </div>
                 </div>
               </div>
@@ -680,7 +680,7 @@ export default function App() {
                 <p style={{fontSize:26,fontWeight:600,color:C.dark,margin:0,lineHeight:1.1}}>₹{fmt2(costPerKg)}<span style={{fontSize:13,fontWeight:400,color:C.light}}> /kg</span></p>
                 <p style={{fontSize:11,color:C.light,margin:"3px 0 0"}}>{isGrain?"Grain → fortified atta":"Flour → fortified atta"}</p>
               </div>
-              <div style={{background:`linear-gradient(135deg, ${C.teal} 0%, #007b8a 100%)`,borderRadius:12,padding:"1.1rem 1.25rem",position:"relative",overflow:"hidden"}}>
+              <div style={{background:`linear-gradient(135deg, ${C.red} 0%, #b84840 100%)`,borderRadius:12,padding:"1.1rem 1.25rem",position:"relative",overflow:"hidden"}}>
                 <div style={{position:"absolute",right:-16,top:-16,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.08)"}}/>
                 <div style={{position:"absolute",right:20,bottom:-20,width:60,height:60,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}/>
                 <p style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.75)",textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 4px"}}>Additional annual cost</p>
@@ -712,7 +712,7 @@ export default function App() {
                     Additional cost breakdown
                   </SectionTitle>
                   <button onClick={()=>{ if(!customMode) setCustomCosts({...DEFAULT_COSTS}); setCustomMode(!customMode); }}
-                    style={{fontSize:12,padding:"7px 14px",background:customMode?C.tealLight:"#f5f8f8",color:customMode?C.teal:C.mid,border:`1.5px solid ${customMode?C.teal:C.border}`,borderRadius:8,fontWeight:500,flexShrink:0,marginLeft:8}}>
+                    style={{fontSize:12,padding:"7px 14px",background:customMode?C.tealLight:C.bg,color:customMode?C.red:C.mid,border:`1.5px solid ${customMode?C.red:C.border}`,borderRadius:8,fontWeight:500,flexShrink:0,marginLeft:8}}>
                     {customMode?"✓ Custom on":"Edit costs"}
                   </button>
                 </div>
@@ -773,7 +773,7 @@ export default function App() {
                   <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
                     <input placeholder="Category name (e.g. Storage costs)" value={newLabel} onChange={e=>setNewLabel(e.target.value)} style={{flex:"2 1 140px",fontSize:12,padding:"7px 10px"}}/>
                     <input type="number" placeholder="₹/kg" value={newCost} onChange={e=>setNewCost(e.target.value)} step="0.01" style={{flex:"1 1 70px",fontSize:12,padding:"7px 10px"}}/>
-                    <button onClick={addCategory} style={{fontSize:12,padding:"7px 14px",background:C.teal,color:"#fff",border:"none",borderRadius:8,fontWeight:500,flexShrink:0}}>Add</button>
+                    <button onClick={addCategory} style={{fontSize:12,padding:"7px 14px",background:C.red,color:"#fff",border:"none",borderRadius:8,fontWeight:500,flexShrink:0}}>Add</button>
                   </div>
                 </div>
                 {(customMode||extraCats.length>0)&&(
@@ -784,7 +784,7 @@ export default function App() {
               <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:cardShadow}}>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
                   <p style={{fontSize:15,fontWeight:600,color:C.dark,margin:0}}>Cost breakdown</p>
-                  <span style={{fontSize:11,padding:"3px 10px",borderRadius:20,background:isGrain?C.yellowLight:C.tealLight,color:isGrain?"#7a5c00":C.teal,fontWeight:600,border:`1px solid ${isGrain?C.yellowMid:C.tealMid}`}}>{supplyType}</span>
+                  <span style={{fontSize:11,padding:"3px 10px",borderRadius:20,background:isGrain?C.yellowLight:C.tealLight,color:isGrain?"#7a5c00":C.red,fontWeight:600,border:`1px solid ${isGrain?C.yellowMid:C.tealMid}`}}>{supplyType}</span>
                 </div>
                 <p style={{fontSize:12,color:C.light,margin:"0 0 14px"}}>{isGrain?"Where your additional costs come from":"Fortification is your only additional cost"}</p>
                 <PieChart data={pieData}/>
@@ -800,8 +800,8 @@ export default function App() {
                       </div>
                     ))}
                     <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0 0"}}>
-                      <span style={{fontSize:13,fontWeight:600,color:C.teal}}>Additional total</span>
-                      <span style={{fontSize:13,fontWeight:600,color:C.teal}}>{fmtBig(additionalTotal)}</span>
+                      <span style={{fontSize:13,fontWeight:600,color:C.red}}>Additional total</span>
+                      <span style={{fontSize:13,fontWeight:600,color:C.red}}>{fmtBig(additionalTotal)}</span>
                     </div>
                   </div>
                 )}
