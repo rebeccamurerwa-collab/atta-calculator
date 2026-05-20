@@ -51,7 +51,7 @@ const SCORE = {
   modern:{ compliance:3, infrastructure:3, shelfLife:3, reach:3, automation:3 },
 };
 
-const C = { red:"#dc6059", yellow:"#ffdc8b", teal:"#0097a7", redLight:"#fff2f0", redMid:"#f5b8b5", tealLight:"#ffd8cb", tealMid:"#f0a898", yellowLight:"#fffbf0", yellowMid:"#ffe9a0", dark:"#2d1a18", mid:"#7a4f47", light:"#b08880", border:"#f0d0c8", bg:"#fff8f6", sand:"#ffd8cb" };
+const C = { red:"#0097a7", yellow:"#ffdc8b", teal:"#0097a7", redLight:"#e0f5f7", redMid:"#4ec4cf", tealLight:"#ffd8cb", tealMid:"#f0a898", yellowLight:"#fffbf0", yellowMid:"#ffe9a0", dark:"#1a2e30", mid:"#4a6366", light:"#8aa5a8", border:"#dde8e9", bg:"#faf9f7", sand:"#ffd8cb" };
 const PIE_COLORS = [C.red, C.teal, C.yellow, "#e8927c","#f0a898","#ffd8cb","#f5c842","#6dd6a0"];
 
 const fmt2 = n => Number(n).toFixed(2);
@@ -67,7 +67,7 @@ const globalStyle = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, sans-serif; background: ${C.bg}; color: ${C.dark}; min-height: 100vh; }
   input, select { font-family: inherit; font-size: 13px; padding: 9px 12px; border: 1.5px solid ${C.border}; border-radius: 8px; outline: none; background: #fff; color: ${C.dark}; width: 100%; transition: border-color 0.15s, box-shadow 0.15s; }
-  input:focus, select:focus { border-color: ${C.red}; box-shadow: 0 0 0 3px rgba(220,96,89,0.12); }
+  input:focus, select:focus { border-color: ${C.teal}; box-shadow: 0 0 0 3px rgba(0,151,167,0.12); }
   input::placeholder { color: ${C.light}; }
   button { font-family: inherit; cursor: pointer; }
 `;
@@ -164,7 +164,7 @@ function MillTab() {
   });
   return (
     <div>
-      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 1px 4px rgba(220,96,89,0.06)"}}>
+      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
         <p style={{fontSize:13,color:C.mid,margin:"0 0 14px",lineHeight:1.7}}>Select a mill type to explore its suitability for your fortified atta program. Information is drawn from the <em>Wheat Flour Supply Chain Analysis</em>, Food Fortification Initiative (FFI), Haryana, 2016.</p>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
           {MILLS.map(m=>(
@@ -189,7 +189,7 @@ function MillTab() {
         </div>
         <p style={{fontSize:10,color:C.light,margin:"8px 0 0"}}>● ● ● High &nbsp;·&nbsp; ● ● ○ Medium &nbsp;·&nbsp; ● ○ ○ Low</p>
       </div>
-      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 1px 4px rgba(220,96,89,0.06)"}}>
+      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
         <SectionTitle sub="Product quality and regulatory compliance">Quality & specifications</SectionTitle>
         <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
@@ -216,7 +216,7 @@ function MillTab() {
           </table>
         </div>
       </div>
-      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:"0 1px 4px rgba(220,96,89,0.06)"}}>
+      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
         <SectionTitle sub="Procurement, distribution and operational considerations">Operational aspects</SectionTitle>
         <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
@@ -548,7 +548,7 @@ export default function App() {
 
   const volMT = targetVol>0 ? (targetVol/1000).toFixed(2)+" MT" : null;
   const costPerKg = additionalUnitTotal;
-  const cardShadow = "0 1px 4px rgba(220,96,89,0.06)";
+  const cardShadow = "0 1px 4px rgba(0,151,167,0.06)";
 
   const tabs = [
     { id:"calculator", label:"💰 Budget calculator" },
@@ -558,19 +558,19 @@ export default function App() {
     <>
       <style>{globalStyle}</style>
 
-      <div style={{background:`linear-gradient(135deg, ${C.red} 0%, #c94d46 100%)`,padding:"2rem 2rem 0"}}>
+      <div style={{background:`#ffd8cb`,padding:"2rem 2rem 0"}}>
         <div style={{maxWidth:920,margin:"0 auto"}}>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
             <span style={{fontSize:28}}>🌾</span>
-            <h1 style={{fontSize:24,fontWeight:600,color:"#fff",margin:0}}>Fortified atta budget calculator</h1>
+            <h1 style={{fontSize:24,fontWeight:600,color:C.dark,margin:0}}>Fortified atta budget calculator</h1>
           </div>
-          <p style={{fontSize:14,color:"rgba(255,255,255,0.8)",margin:"0 0 1.25rem"}}>Estimate what it would cost to add fortification to your existing atta distribution program.</p>
+          <p style={{fontSize:14,color:C.mid,margin:"0 0 1.25rem"}}>Estimate what it would cost to add fortification to your existing atta distribution program.</p>
           <div style={{display:"flex",gap:4}}>
             {tabs.map(t=>(
               <button key={t.id} onClick={()=>setActiveTab(t.id)}
                 style={{padding:"10px 20px",fontSize:13,fontWeight:500,border:"none",borderRadius:"8px 8px 0 0",cursor:"pointer",
-                  background:activeTab===t.id?C.bg:"rgba(255,255,255,0.15)",
-                  color:activeTab===t.id?C.dark:"rgba(255,255,255,0.85)"}}>
+                  background:activeTab===t.id?C.bg:"rgba(0,0,0,0.08)",
+                  color:activeTab===t.id?C.dark:C.mid}}>
                 {t.label}
               </button>
             ))}
@@ -680,7 +680,7 @@ export default function App() {
                 <p style={{fontSize:26,fontWeight:600,color:C.dark,margin:0,lineHeight:1.1}}>₹{fmt2(costPerKg)}<span style={{fontSize:13,fontWeight:400,color:C.light}}> /kg</span></p>
                 <p style={{fontSize:11,color:C.light,margin:"3px 0 0"}}>{isGrain?"Grain → fortified atta":"Flour → fortified atta"}</p>
               </div>
-              <div style={{background:`linear-gradient(135deg, ${C.red} 0%, #b84840 100%)`,borderRadius:12,padding:"1.1rem 1.25rem",position:"relative",overflow:"hidden"}}>
+              <div style={{background:`linear-gradient(135deg, ${C.teal} 0%, #007b8a 100%)`,borderRadius:12,padding:"1.1rem 1.25rem",position:"relative",overflow:"hidden"}}>
                 <div style={{position:"absolute",right:-16,top:-16,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.08)"}}/>
                 <div style={{position:"absolute",right:20,bottom:-20,width:60,height:60,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}/>
                 <p style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.75)",textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 4px"}}>Additional annual cost</p>
