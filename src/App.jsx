@@ -488,6 +488,7 @@ export default function App() {
   const [population, setPopulation] = useState("");
   const [kgPerBenef, setKgPerBenef] = useState("");
   const [totalMonthlyKg, setTotalMonthlyKg] = useState("");
+  const [activeVolumeMode, setActiveVolumeMode] = useState(null); // "beneficiary" | "consumption" | null
   const [customMode, setCustomMode] = useState(false);
   const [customCosts, setCustomCosts] = useState({...DEFAULT_COSTS});
   const [extraCats, setExtraCats] = useState([]);
@@ -647,23 +648,31 @@ export default function App() {
 
               {/* Volume inputs */}
               <div style={{background:"#f0f8f9",borderRadius:10,padding:"14px 16px",border:`1.5px solid ${C.tealMid}33`}}>
-                <p style={{fontSize:11,fontWeight:600,color:C.teal,textTransform:"uppercase",letterSpacing:"0.06em",margin:"0 0 12px"}}>Volume — fill in whichever you know</p>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                  <p style={{fontSize:11,fontWeight:600,color:C.teal,textTransform:"uppercase",letterSpacing:"0.06em",margin:0}}>Volume — fill in one group only</p>
+                  {activeVolumeMode&&<span style={{fontSize:11,padding:"2px 10px",borderRadius:20,background:C.tealLight,color:C.teal,border:`1px solid ${C.tealMid}`,fontWeight:500}}>Using: {activeVolumeMode==="beneficiary"?"Beneficiaries":"Total consumption"}</span>}
+                </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,alignItems:"end"}}>
                   <div>
                     <Label>Total beneficiaries</Label>
-                    <input type="number" placeholder="e.g. 50,000" value={population} onChange={e=>setPopulation(e.target.value)}/>
+                    <input type="number" placeholder="e.g. 50,000" value={population}
+                      onChange={e=>{ setPopulation(e.target.value); if(e.target.value){ setActiveVolumeMode("beneficiary"); setTotalMonthlyKg(""); } else if(!kgPerBenef){ setActiveVolumeMode(null); } }}
+                      style={{opacity:activeVolumeMode==="consumption"?0.4:1,transition:"opacity 0.2s"}}/>
                   </div>
                   <div>
                     <Label>Kg / beneficiary (monthly)</Label>
-                    <input type="number" placeholder="e.g. 5" value={kgPerBenef} onChange={e=>setKgPerBenef(e.target.value)}/>
+                    <input type="number" placeholder="e.g. 5" value={kgPerBenef}
+                      onChange={e=>{ setKgPerBenef(e.target.value); if(e.target.value){ setActiveVolumeMode("beneficiary"); setTotalMonthlyKg(""); } else if(!population){ setActiveVolumeMode(null); } }}
+                      style={{opacity:activeVolumeMode==="consumption"?0.4:1,transition:"opacity 0.2s"}}/>
                   </div>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",paddingBottom:2}}>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",paddingBottom:2,gap:6}}>
                     <span style={{fontSize:13,color:C.light,fontWeight:500}}>— or —</span>
+                    {activeVolumeMode&&<button onClick={()=>{ setPopulation(""); setKgPerBenef(""); setTotalMonthlyKg(""); setActiveVolumeMode(null); }} style={{fontSize:11,padding:"3px 10px",borderRadius:6,border:`1px solid ${C.redMid}`,background:C.redLight,color:C.red,fontWeight:500,cursor:"pointer"}}>Clear all</button>}
                   </div>
                   <div>
                     <Label>Total monthly consumption</Label>
                     <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                      <input type="number" placeholder={volumeUnit==="MT"?"e.g. 250":"e.g. 250,000"} value={totalMonthlyKg} onChange={e=>setTotalMonthlyKg(e.target.value)} style={{flex:1}}/>
+                      <input type="number" placeholder={volumeUnit==="MT"?"e.g. 250":"e.g. 250,000"} value={totalMonthlyKg} onChange={e=>{ setTotalMonthlyKg(e.target.value); if(e.target.value){ setActiveVolumeMode("consumption"); setPopulation(""); setKgPerBenef(""); } else { setActiveVolumeMode(null); } }} style={{flex:1,opacity:activeVolumeMode==="beneficiary"?0.4:1,transition:"opacity 0.2s"}}/>
                       <div style={{display:"flex",borderRadius:8,border:`1.5px solid ${C.border}`,overflow:"hidden",flexShrink:0}}>
                         {["kg","MT"].map(u=>(
                           <button key={u} onClick={()=>handleVolumeUnitToggle(u)}
