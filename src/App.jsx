@@ -703,15 +703,15 @@ function PitchTab({ targetVol, additionalUnitTotal, additionalTotal, population,
         <h2 style={{fontSize:22,fontWeight:600,color:"#fff",margin:"0 0 6px",lineHeight:1.2}}>The Case for Wheat Flour Fortification</h2>
         <p style={{fontSize:14,color:"rgba(255,255,255,0.8)",margin:"0 0 1rem"}}>{geoName||"India"} — Prepared by Fortify Health</p>
         <p style={{fontSize:13,color:"rgba(255,255,255,0.75)",lineHeight:1.7,margin:0,maxWidth:580}}>
-          Wheat flour fortification is among the most cost-effective public health interventions available. It works through existing supply chains, requires no behaviour change from beneficiaries, and is mandated under FSSAI regulations.
+          Adding iron and vitamins to government atta costs less than ₹6 per kg more — and reaches every family already receiving wheat through state food schemes, with no change to how they cook or eat.
         </p>
       </div>
 
       {!hasVol && (
         <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"2rem",textAlign:"center",marginBottom:"1rem"}}>
           <p style={{fontSize:24,margin:"0 0 8px"}}>📊</p>
-          <p style={{fontSize:14,fontWeight:600,color:C.dark,margin:"0 0 4px"}}>Enter your program data first</p>
-          <p style={{fontSize:13,color:C.mid,margin:0}}>Go to the <strong>Budget calculator</strong> tab and fill in your volume data — the pitch document will populate automatically.</p>
+          <p style={{fontSize:14,fontWeight:600,color:C.dark,margin:"0 0 4px"}}>Enter your program details first</p>
+          <p style={{fontSize:13,color:C.mid,margin:0}}>Go to the <strong>Budget calculator</strong> tab and fill in your state and volume data. This brief will populate automatically with figures specific to your program.</p>
         </div>
       )}
 
@@ -721,14 +721,14 @@ function PitchTab({ targetVol, additionalUnitTotal, additionalTotal, population,
         <div style={{background:"#fff",border:`1px solid ${C.border}`,borderLeft:`4px solid ${C.teal}`,borderRadius:14,padding:"1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.06)"}}>
           <p style={{fontSize:10,fontWeight:700,color:C.teal,textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 14px"}}>01 — What it costs</p>
           <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:14}}>
-            <Stat value={fmtINR(monthlyTotal)} label="Per month" sub={`for ${(targetVol/1000/12).toFixed(0)} MT/month`} />
-            <Stat value={fmtINR(additionalTotal)} label="Per year" sub="total fortification cost" color={C.teal} bg={C.tealLight} />
-            <Stat value={fmt2(additionalUnitTotal)} label="Per kg" sub="additional above existing cost" color={C.mid} bg={C.bg} />
-            {perPersonMonth!=null && <Stat value={fmt2(perPersonMonth)} label="Per person / month" sub="individual cost" color={C.mid} bg={C.bg} />}
+            <Stat value={fmtINR(monthlyTotal)} label="Additional cost per month" sub={`across the full program`} />
+            <Stat value={fmtINR(additionalTotal)} label="Additional cost per year" sub="total additional spend to fortify" color={C.teal} bg={C.tealLight} />
+            <Stat value={fmt2(additionalUnitTotal)} label="Extra cost per kg of atta" sub="on top of existing procurement price" color={C.mid} bg={C.bg} />
+            {perPersonMonth!=null && <Stat value={fmt2(perPersonMonth)} label="Per person per month" sub="what fortification costs per family member" color={C.mid} bg={C.bg} />}
           </div>
           <div style={{background:C.peachLight,borderRadius:9,padding:"12px 16px",border:`1px solid ${C.peachMid}`}}>
             <p style={{fontSize:13,color:C.dark,margin:0,lineHeight:1.75}}>
-              <strong style={{color:C.red}}>At {fmt2(additionalUnitTotal)} per kg</strong> — less than the cost of a cup of tea — every beneficiary in {geoName||"the program"} receives fortified atta with improved iron, folic acid, and B vitamins. No new infrastructure. No change to beneficiary behaviour.
+              <strong style={{color:C.red}}>For just {fmt2(additionalUnitTotal)} extra per kg</strong>, every person receiving government atta in {geoName||"this program"} gets flour enriched with iron, folic acid, and B vitamins. The flour goes through the same mills, the same trucks, and the same ration shops — nothing changes except the nutrition.
             </p>
           </div>
         </div>
@@ -736,13 +736,13 @@ function PitchTab({ targetVol, additionalUnitTotal, additionalTotal, population,
         {/* Section 2 — Cost of inaction */}
         <div style={{background:"#fff",border:`1px solid ${C.border}`,borderLeft:`4px solid #f39c12`,borderRadius:14,padding:"1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.06)"}}>
           <p style={{fontSize:10,fontWeight:700,color:"#b07d10",textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 14px"}}>02 — The cost of not acting</p>
-          <p style={{fontSize:14,fontWeight:600,color:C.dark,margin:"0 0 14px",lineHeight:1.4}}>Treating iron deficiency anaemia costs far more than preventing it.</p>
+          <p style={{fontSize:14,fontWeight:600,color:C.dark,margin:"0 0 14px",lineHeight:1.4}}>Treating anaemia in hospitals costs many times more than preventing it through fortified flour.</p>
 
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12,marginBottom:16}}>
             {[
-              { label:"Oral iron (per patient/year)", value:"₹3,902", source:"Joshi et al., 2026" },
-              { label:"IV iron sucrose (per patient/year)", value:"₹13,742", source:"Joshi et al., 2026" },
-              { label:"Annual production losses — India", value:"USD 24,001 M", source:"Plessow et al., 2015" },
+              { label:"Cost to treat one anaemia patient with iron tablets — per year", value:"₹3,902", source:"Joshi et al., 2026" },
+              { label:"Cost to treat one anaemia patient with IV drip — per year", value:"₹13,742", source:"Joshi et al., 2026" },
+              { label:"India's annual economic loss from anaemia in children under 5", value:"USD 24,001 M", source:"Plessow et al., 2015" },
             ].map((item,i)=>(
               <div key={i} style={{background:"#fffbf0",borderRadius:10,padding:"14px 16px",border:`1px solid #ffe9a0`}}>
                 <p style={{fontSize:11,color:"#7a6000",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 6px",lineHeight:1.3}}>{item.label}</p>
@@ -752,7 +752,7 @@ function PitchTab({ targetVol, additionalUnitTotal, additionalTotal, population,
             ))}
           </div>
           <p style={{fontSize:12,color:C.mid,lineHeight:1.7,margin:0}}>
-            Iron deficiency anaemia costs India an estimated <strong>1.3% of GDP annually</strong> in lost productivity (Plessow et al., 2015). The production losses — USD 24,001 million per year — represent 125,699 complete lifespans lost every year. Fortification at the point of milling addresses the root cause at a fraction of the treatment cost.
+            Anaemia — largely caused by iron deficiency — reduces the ability of children to learn and adults to work. Across India, this lost productivity is estimated at <strong>1.3% of GDP every year</strong> (Plessow et al., 2015). Fortifying wheat flour at the mill stops the problem before it starts, at a cost far below any hospital treatment.
           </p>
         </div>
 
@@ -761,10 +761,10 @@ function PitchTab({ targetVol, additionalUnitTotal, additionalTotal, population,
           <p style={{fontSize:10,fontWeight:700,color:C.teal,textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 14px"}}>03 — Why wheat flour fortification works</p>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:10}}>
             {[
-              { icon:"🏭", title:"Works through existing systems", body:"Fortification happens at the mill — the same flour, the same supply chain. No new logistics required." },
-              { icon:"🍽️", title:"No behaviour change needed", body:"Fortified atta is indistinguishable from standard atta. Beneficiary uptake is automatic and universal." },
-              { icon:"📋", title:"FSSAI-mandated standard", body:"Wheat flour fortification is mandated under FSSAI regulations — this program supports compliance with existing law." },
-              { icon:"📈", title:"Cost-effective at scale", body:"At " + fmt2(additionalUnitTotal) + "/kg, fortification costs less per beneficiary than any clinical treatment for IDA." },
+              { icon:"🏭", title:"No new infrastructure needed", body:"Micronutrients are added at the mill before the flour is packed. The same trucks, the same ration shops, the same process — just better flour." },
+              { icon:"🍽️", title:"Families don't need to do anything differently", body:"Fortified atta looks, smells, and cooks exactly the same as regular atta. Every person who receives it automatically benefits." },
+              { icon:"📋", title:"Required by national food safety law", body:"India's food safety authority (FSSAI) has mandated fortification of wheat flour. This program brings the state into compliance with that requirement." },
+              { icon:"📈", title:"Far cheaper than treating anaemia", body:"At " + fmt2(additionalUnitTotal) + "/kg, the cost of fortification is a small fraction of what the government spends treating anaemia patients in health facilities." },
             ].map((r,i)=>(
               <div key={i} style={{background:C.bg,borderRadius:10,padding:"1rem 1.1rem",border:`1px solid ${C.border}`}}>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
@@ -794,7 +794,7 @@ function PitchTab({ targetVol, additionalUnitTotal, additionalTotal, population,
               </div>
             </div>
           ))}
-          <p style={{fontSize:11,color:C.light,margin:"10px 0 0",fontStyle:"italic"}}>⚠ Treatment cost figures apply to pregnant women with moderate-to-severe IDA. Confirm the appropriate comparator with the team before external distribution.</p>
+          <p style={{fontSize:11,color:C.light,margin:"10px 0 0",fontStyle:"italic"}}>⚠ The treatment cost figures above are from studies of pregnant women with moderate-to-severe anaemia. Please check with the Fortify Health team on the most appropriate comparison to use for your specific audience before sharing externally.</p>
         </div>
 
       </>)}
@@ -805,7 +805,7 @@ function PitchTab({ targetVol, additionalUnitTotal, additionalTotal, population,
           onClick={()=>generatePitchPDF({ geoName, targetVol, additionalUnitTotal, additionalTotal, population, monthlyTotal, perPersonMonth })}
           disabled={!hasVol}
           style={{display:"flex",alignItems:"center",gap:8,padding:"12px 28px",fontSize:13,fontWeight:600,borderRadius:9,border:"none",cursor:hasVol?"pointer":"not-allowed",background:hasVol?C.red:"#e0e0e0",color:"#fff",opacity:hasVol?1:0.6,letterSpacing:"0.01em"}}>
-          <span style={{fontSize:16}}>⬇</span> Download stakeholder brief (PDF)
+          <span style={{fontSize:16}}>⬇</span> Download government brief (PDF)
         </button>
       </div>
     </div>
@@ -1191,6 +1191,34 @@ export default function App() {
                 </p>
               </div>
             </div>
+
+            {/* Pitch statement */}
+            {targetVol>0 && population && parseFloat(population)>0 && (
+              <div style={{background:`linear-gradient(135deg, ${C.dark} 0%, #2a4a4e 100%)`,borderRadius:14,padding:"2rem 2.5rem",marginBottom:"1rem",textAlign:"center"}}>
+                <p style={{fontSize:13,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600,margin:"0 0 1.5rem"}}>The case for fortification</p>
+                <p style={{fontSize:17,color:"rgba(255,255,255,0.9)",lineHeight:2,margin:0,maxWidth:640,marginLeft:"auto",marginRight:"auto"}}>
+                  Fortifying your atta program costs{" "}
+                  <span style={{fontSize:36,fontWeight:600,color:C.peach,letterSpacing:"-0.02em",display:"inline-block",lineHeight:1.1,verticalAlign:"middle",margin:"0 6px"}}>
+                    ₹{(additionalTotal/12/parseFloat(population)).toFixed(2)}
+                  </span>
+                  {" "}per person per month.
+                </p>
+                <p style={{fontSize:17,color:"rgba(255,255,255,0.9)",lineHeight:2,margin:"0.75rem 0 0",maxWidth:640,marginLeft:"auto",marginRight:"auto"}}>
+                  By comparison, managing a single case of iron deficiency anaemia costs{" "}
+                  <span style={{fontSize:36,fontWeight:600,color:"#f39c12",letterSpacing:"-0.02em",display:"inline-block",lineHeight:1.1,verticalAlign:"middle",margin:"0 6px"}}>
+                    ₹3,902
+                  </span>
+                  {" "}per person per year.
+                </p>
+                <p style={{fontSize:11,color:"rgba(255,255,255,0.35)",margin:"1.5rem 0 0"}}>
+                  Anaemia treatment cost:{" "}
+                  <a href="https://doi.org/10.1186/s13561-026-00790-4" target="_blank" rel="noreferrer"
+                     style={{color:"rgba(255,255,255,0.45)",textDecoration:"underline"}}>
+                    Joshi et al. (2026), ICMR-NIRRCH Mumbai ↗
+                  </a>
+                </p>
+              </div>
+            )}
 
             {/* Export PDF */}
             <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:cardShadow}}>
