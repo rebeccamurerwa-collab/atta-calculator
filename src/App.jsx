@@ -482,7 +482,196 @@ async function generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal
 }
 
 
-function PitchTab({ targetVol, additionalUnitTotal, additionalTotal, population, kgPerBenef, totalMonthlyKg, volumeUnit }) {
+async function generatePitchPDF({ geoName, targetVol, additionalUnitTotal, additionalTotal, population, monthlyTotal, perPersonMonth }) {
+  const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
+  const W = 210, ml = 18, mr = 18, cw = W - ml - mr;
+  const red = [220,96,89], teal = [0,151,167], peach = [255,216,203], dark = [26,43,45], mid = [74,99,102], light = [138,165,168], peachLight = [255,245,242], tealLight = [224,247,249];
+
+  const fmtINR = n => {
+    if (!n || isNaN(n)) return "—";
+    if (n >= 10000000) return "Rs." + (n/10000000).toFixed(2) + " Cr";
+    if (n >= 100000)   return "Rs." + (n/100000).toFixed(2) + " L";
+    return "Rs." + Math.round(n).toLocaleString("en-IN");
+  };
+  const fmt2 = n => n != null ? "Rs." + n.toFixed(2) : "—";
+  const geo = geoName || "India";
+  let y = 0;
+
+  // Header band
+  doc.setFillColor(...red);
+  doc.rect(0, 0, W, 42, "F");
+  doc.addImage(LOGO_B64, "PNG", ml, 5, 22, 22);
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(8); doc.setFont("helvetica","normal");
+  doc.text("FORTIFY HEALTH", ml+26, 13);
+  doc.setFontSize(18); doc.setFont("helvetica","bold");
+  doc.text("The Case for Wheat Flour Fortification", ml+26, 23);
+  doc.setFontSize(10); doc.setFont("helvetica","normal");
+  doc.text(geo + " — Government Stakeholder Brief", ml+26, 31);
+  doc.setFontSize(8); doc.setTextColor(255,200,200);
+  doc.text("Prepared by Fortify Health  |  " + new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"long",year:"numeric"}), W-mr, 37, {align:"right"});
+  y = 52;
+
+  // Section 1 — The opportunity
+  doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.setTextColor(...light);
+  doc.text("01  THE OPPORTUNITY", ml, y); y += 5;
+  doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.setTextColor(...dark);
+  doc.text("Iron deficiency anaemia is the most prevalent nutritional disorder in " + geo + ".", ml, y, {maxWidth:cw}); y += 8;
+  doc.setFontSize(10); doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
+  const para1 = "Wheat flour fortification is one of the most cost-effective, evidence-backed public health interventions available. By adding micronutrients at the mill — at a marginal additional cost — every beneficiary receiving atta through existing government schemes receives improved nutrition with no change to their behaviour or food habits.";
+  const lines1 = doc.splitTextToSize(para1, cw);
+  doc.text(lines1, ml, y); y += lines1.length * 5 + 6;
+
+  // Section 2 — Program cost
+  doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.setTextColor(...light);
+  doc.text("02  WHAT IT COSTS — " + geo.toUpperCase(), ml, y); y += 5;
+
+  // Big number cards
+  const nums = [
+    { label:"Additional cost per kg", value: fmt2(additionalUnitTotal), sub:"above existing procurement cost" },
+    { label:"Additional cost per month", value: fmtINR(monthlyTotal), sub: targetVol > 0 ? "for " + (targetVol/1000).toFixed(0) + " MT annual volume" : "based on program volume" },
+    { label:"Additional cost per year", value: fmtINR(additionalTotal), sub:"total program fortification cost" },
+  ];
+  if (perPersonMonth != null) {
+    nums.push({ label:"Per beneficiary per month", value: fmt2(perPersonMonth), sub:"individual cost of fortification" });
+  }
+
+  const cols = nums.length <= 3 ? 3 : 4;
+  const cardW = (cw - (cols-1)*4) / cols;
+  nums.forEach((n,i) => {
+    const x = ml + i*(cardW+4);
+    // Card bg
+    doc.setFillColor(...tealLight);
+    doc.roundedRect(x, y, cardW, 28, 2, 2, "F");
+    doc.setDrawColor(...teal); doc.setLineWidth(0.5);
+    doc.roundedRect(x, y, cardW, 28, 2, 2, "S");
+    // Label
+    doc.setFontSize(7.5); doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
+    const labelLines = doc.splitTextToSize(n.label, cardW-6);
+    doc.text(labelLines, x+3, y+5);
+    // Value
+    doc.setFontSize(n.value.length > 10 ? 13 : 16); doc.setFont("helvetica","bold"); doc.setTextColor(...teal);
+    doc.text(n.value, x+3, y+16);
+    // Sub
+    doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.setTextColor(...light);
+    const subLines = doc.splitTextToSize(n.sub, cardW-6);
+    doc.text(subLines, x+3, y+22);
+  });
+  y += 36;
+
+  // Context note
+  doc.setFillColor(...peachLight);
+  doc.roundedRect(ml, y, cw, 14, 2, 2, "F");
+  doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.setTextColor(...red);
+  doc.text("Key message:", ml+4, y+6);
+  doc.setFont("helvetica","normal"); doc.setTextColor(...dark);
+  const msg = "Fortifying atta for " + geo + " costs " + fmt2(additionalUnitTotal) + "/kg — less than a cup of tea — and reaches every beneficiary in the existing distribution system.";
+  const msgLines = doc.splitTextToSize(msg, cw-40);
+  doc.text(msgLines, ml+34, y+6);
+  y += 22;
+
+  // Section 3 — The cost of inaction
+  doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.setTextColor(...light);
+  doc.text("03  THE COST OF INACTION", ml, y); y += 5;
+  doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.setTextColor(...dark);
+  doc.text("Treating iron deficiency anaemia costs far more than preventing it.", ml, y, {maxWidth:cw}); y += 8;
+
+  // Comparison table
+  const compRows = [
+    ["Oral iron supplementation", "Rs.3,902", "per patient / year", "Joshi et al. (2026), ICMR-NIRRCH"],
+    ["IV iron sucrose (full course)", "Rs.13,742", "per patient / year", "Joshi et al. (2026), ICMR-NIRRCH"],
+    ["Wheat flour fortification", fmt2(additionalUnitTotal)+"/kg", "additional cost at mill", "Fortify Health estimates"],
+  ];
+
+  // Table header
+  doc.setFillColor(...dark);
+  doc.rect(ml, y, cw, 7, "F");
+  doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(255,255,255);
+  doc.text("Intervention", ml+3, y+5);
+  doc.text("Cost", ml+cw*0.48, y+5);
+  doc.text("Basis", ml+cw*0.62, y+5);
+  doc.text("Source", ml+cw*0.82, y+5);
+  y += 7;
+
+  compRows.forEach((row, i) => {
+    const bg = i === 2 ? tealLight : [252,252,250];
+    doc.setFillColor(...bg);
+    doc.rect(ml, y, cw, 8, "F");
+    doc.setFontSize(8.5); doc.setFont(i===2?"helvetica":"helvetica", i===2?"bold":"normal");
+    doc.setTextColor(...(i===2 ? teal : dark));
+    doc.text(row[0], ml+3, y+5.5);
+    doc.setFont("helvetica","bold"); doc.setTextColor(...(i===2?teal:red));
+    doc.text(row[1], ml+cw*0.48, y+5.5);
+    doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
+    doc.text(row[2], ml+cw*0.62, y+5.5);
+    doc.setFontSize(7.5);
+    doc.text(row[3], ml+cw*0.82, y+5.5);
+    y += 8;
+  });
+  y += 6;
+
+  // GDP impact
+  doc.setFillColor(250,248,240);
+  doc.roundedRect(ml, y, cw, 20, 2, 2, "F");
+  doc.setDrawColor(224,192,96); doc.setLineWidth(0.4);
+  doc.roundedRect(ml, y, cw, 20, 2, 2, "S");
+  doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(176,125,16);
+  doc.text("National economic burden of IDA (Plessow et al., 2015 — PLOS ONE / INCLEN New Delhi):", ml+4, y+6);
+  doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
+  doc.text("Annual production losses of USD 24,001 million — equivalent to 1.3% of India's GDP. Intangible costs of 8.3 million DALYs,", ml+4, y+11);
+  doc.text("equivalent to 125,699 complete lifespans lost every year. These are the costs of not acting.", ml+4, y+16);
+  y += 28;
+
+  // Section 4 — Why wheat flour
+  doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.setTextColor(...light);
+  doc.text("04  WHY WHEAT FLOUR FORTIFICATION", ml, y); y += 5;
+
+  const reasons = [
+    ["Already in the supply chain", "Wheat flour is distributed through PM-POSHAN and other government schemes. Fortification requires no new infrastructure — only a microdoser at the mill."],
+    ["No behaviour change required", "Fortified atta looks, cooks, and tastes identical to standard atta. Beneficiary uptake is automatic."],
+    ["FSSAI-mandated standard", "Fortification of wheat flour is mandated under FSSAI regulations. This program supports compliance with existing law."],
+    ["Cost-effective at scale", "At Rs." + (additionalUnitTotal||0).toFixed(2) + "/kg, fortification costs less per beneficiary than any clinical intervention for treating IDA."],
+  ];
+
+  reasons.forEach(([title, body]) => {
+    if (y > 255) { doc.addPage(); y = 20; }
+    doc.setFillColor(247,250,250);
+    doc.roundedRect(ml, y, cw, 14, 2, 2, "F");
+    doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.setTextColor(...teal);
+    doc.text("✓  " + title, ml+3, y+6);
+    doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
+    const bodyLines = doc.splitTextToSize(body, cw-8);
+    doc.text(bodyLines, ml+7, y+11);
+    y += 8 + bodyLines.length * 4.5;
+  });
+  y += 4;
+
+  // References
+  if (y > 250) { doc.addPage(); y = 20; }
+  doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(...light);
+  doc.text("REFERENCES", ml, y); y += 5;
+  const refs = [
+    "Joshi, B., et al. (2026). Cost-effectiveness of IV iron in pregnant women with IDA. Health Economics Review (In Press), ICMR-NIRRCH Mumbai. https://doi.org/10.1186/s13561-026-00790-4",
+    "Saha, S., et al. (2024). Cost-effectiveness of IV iron sucrose vs oral iron in pregnant women with IDA. Health Economics Review, IIPHG Gandhinagar. https://doi.org/10.1186/s13561-023-00474-3",
+    "Plessow, R., et al. (2015). Social costs of IDA in 6-59 month-old children in India. PLOS ONE. https://doi.org/10.1371/journal.pone.0136581",
+  ];
+  refs.forEach(r => {
+    doc.setFontSize(7.5); doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
+    const rLines = doc.splitTextToSize(r, cw);
+    doc.text(rLines, ml, y); y += rLines.length * 4 + 2;
+  });
+
+  // Footer
+  const footerY = 287;
+  doc.setDrawColor(...peach); doc.line(ml, footerY-4, W-mr, footerY-4);
+  doc.setFontSize(7.5); doc.setFont("helvetica","normal"); doc.setTextColor(...light);
+  doc.text("Fortify Health  |  www.fortifyhealth.global  |  Confidential — for stakeholder use only", ml, footerY);
+  doc.text("Page 1", W-mr, footerY, {align:"right"});
+
+  doc.save("fortify-health-" + geo.toLowerCase().replace(/\s+/g,"-") + "-stakeholder-brief.pdf");
+}
+
+function PitchTab({ targetVol, additionalUnitTotal, additionalTotal, population, geoName }) {
   const hasVol = targetVol > 0;
   const monthlyTotal = additionalTotal / 12;
   const perPersonYear = population && parseFloat(population) > 0 ? additionalTotal / parseFloat(population) : null;
@@ -496,138 +685,128 @@ function PitchTab({ targetVol, additionalUnitTotal, additionalTotal, population,
   }
   function fmt2(n) { return n != null ? "₹" + n.toFixed(2) : "—"; }
 
-  const SOURCES = [
-    {
-      id: "joshi",
-      authors: "Joshi, B., et al. (2026)",
-      title: "Cost-effectiveness of intravenous iron in pregnant women with iron deficiency anaemia",
-      journal: "Health Economics Review (Article in Press), ICMR-NIRRCH Mumbai",
-      url: "https://doi.org/10.1186/s13561-026-00790-4",
-      oral: { label:"Oral iron sucrose", value:"₹3,902", sub:"per patient/year (societal cost)" },
-      iv:   { label:"IV iron sucrose",   value:"₹13,742", sub:"per patient/year (full course)" },
-      note: "INR at 2025 prices. Pregnant women with moderate-to-severe IDA. 98% probability of cost-effectiveness.",
-    },
-    {
-      id: "saha",
-      authors: "Saha, S., et al. (2024)",
-      title: "Cost-effectiveness of IV iron sucrose vs oral iron in pregnant women with IDA",
-      journal: "Health Economics Review, IIPHG Gandhinagar",
-      url: "https://doi.org/10.1186/s13561-023-00474-3",
-      oral: { label:"Oral iron",     value:"USD 49 (≈₹3,900)", sub:"per patient, discounted societal cost" },
-      iv:   { label:"IV iron sucrose", value:"USD 87 (≈₹6,923)", sub:"ICER: USD 9.84/QALY — 0.049% of per-capita GDP" },
-      note: "188 pregnant women, Gujarat. 1 USD = ₹79.58. Oral iron failed clinically — Hb continued to fall.",
-    },
-  ];
-
-  const BigNum = ({ value, label, color }) => (
-    <div style={{textAlign:"center",padding:"1.1rem 0.5rem"}}>
-      <p style={{fontSize:32,fontWeight:600,color:color||C.teal,margin:"0 0 4px",letterSpacing:"-0.02em",lineHeight:1}}>{value}</p>
-      <p style={{fontSize:12,color:C.mid,margin:0,lineHeight:1.4}}>{label}</p>
+  const Stat = ({ value, label, sub, color, bg }) => (
+    <div style={{flex:1,minWidth:130,background:bg||C.tealLight,borderRadius:12,padding:"1.25rem 1rem",border:`1.5px solid ${color||C.tealMid}`,textAlign:"center"}}>
+      <p style={{fontSize:11,fontWeight:600,color:color||C.teal,textTransform:"uppercase",letterSpacing:"0.07em",margin:"0 0 8px",lineHeight:1.3}}>{label}</p>
+      <p style={{fontSize:34,fontWeight:600,color:color||C.teal,margin:"0 0 4px",letterSpacing:"-0.02em",lineHeight:1}}>{value}</p>
+      {sub&&<p style={{fontSize:11,color:C.mid,margin:0,lineHeight:1.4}}>{sub}</p>}
     </div>
   );
 
   return (
     <div>
-      {/* Monthly / Annual cost block */}
-      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderLeft:`4px solid ${C.teal}`,borderRadius:14,padding:"1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.08)"}}>
-        <p style={{fontSize:11,fontWeight:700,color:C.teal,textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 4px"}}>Fortification cost — your program</p>
-        {!hasVol && (
-          <p style={{fontSize:13,color:C.light,margin:"1rem 0",fontStyle:"italic"}}>Enter volume data in the Budget calculator tab to populate this section.</p>
-        )}
-        {hasVol && (
-          <>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:0,borderRadius:10,border:`1px solid ${C.border}`,overflow:"hidden",marginTop:14}}>
-              <div style={{borderRight:`1px solid ${C.border}`,background:C.tealLight}}>
-                <BigNum value={fmtINR(monthlyTotal)} label="per month" color={C.teal} />
-              </div>
-              <div style={{borderRight:`1px solid ${C.border}`,background:"#fff"}}>
-                <BigNum value={fmtINR(additionalTotal)} label="per year" color={C.teal} />
-              </div>
-              <div style={{borderRight:`1px solid ${C.border}`,background:"#fff"}}>
-                <BigNum value={fmt2(additionalUnitTotal)} label="per kg" color={C.mid} />
-              </div>
-              {perPersonMonth != null && (
-                <div style={{background:"#fff"}}>
-                  <BigNum value={fmt2(perPersonMonth)} label="per person / month" color={C.mid} />
-                </div>
-              )}
-            </div>
-            {/* Pitch line */}
-            <div style={{marginTop:14,padding:"12px 16px",background:C.peachLight,borderRadius:9,border:`1px solid ${C.peachMid}`}}>
-              <p style={{fontSize:13,color:C.dark,margin:0,lineHeight:1.75}}>
-                <strong style={{color:C.red}}>Pitch line:</strong>{" "}
-                "Fortifying your atta program costs <strong>{fmtINR(monthlyTotal)}/month</strong> ({fmtINR(additionalTotal)}/year){perPersonMonth!=null?` — just ${fmt2(perPersonMonth)} per beneficiary per month`:""}.
-                By comparison, treating a single case of iron deficiency anaemia with oral iron costs upwards of <strong>₹3,902 per patient</strong> (Joshi et al., 2026)."
-              </p>
-            </div>
-          </>
-        )}
+      {/* Document header */}
+      <div style={{background:C.red,borderRadius:14,padding:"1.75rem 2rem",marginBottom:"1rem",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",right:-30,top:-30,width:160,height:160,borderRadius:"50%",background:"rgba(255,255,255,0.07)"}}/>
+        <div style={{position:"absolute",right:60,bottom:-40,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,0.05)"}}/>
+        <p style={{fontSize:11,color:"rgba(255,255,255,0.65)",textTransform:"uppercase",letterSpacing:"0.1em",margin:"0 0 6px",fontWeight:600}}>Government stakeholder brief</p>
+        <h2 style={{fontSize:22,fontWeight:600,color:"#fff",margin:"0 0 6px",lineHeight:1.2}}>The Case for Wheat Flour Fortification</h2>
+        <p style={{fontSize:14,color:"rgba(255,255,255,0.8)",margin:"0 0 1rem"}}>{geoName||"India"} — Prepared by Fortify Health</p>
+        <p style={{fontSize:13,color:"rgba(255,255,255,0.75)",lineHeight:1.7,margin:0,maxWidth:580}}>
+          Wheat flour fortification is among the most cost-effective public health interventions available. It works through existing supply chains, requires no behaviour change from beneficiaries, and is mandated under FSSAI regulations.
+        </p>
       </div>
 
-      {/* Comparison — anaemia management costs */}
-      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderLeft:`4px solid #f39c12`,borderRadius:14,padding:"1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.08)"}}>
-        <p style={{fontSize:11,fontWeight:700,color:"#b07d10",textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 14px"}}>Comparator — anaemia management cost per patient</p>
+      {!hasVol && (
+        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"2rem",textAlign:"center",marginBottom:"1rem"}}>
+          <p style={{fontSize:24,margin:"0 0 8px"}}>📊</p>
+          <p style={{fontSize:14,fontWeight:600,color:C.dark,margin:"0 0 4px"}}>Enter your program data first</p>
+          <p style={{fontSize:13,color:C.mid,margin:0}}>Go to the <strong>Budget calculator</strong> tab and fill in your volume data — the pitch document will populate automatically.</p>
+        </div>
+      )}
 
-        {SOURCES.map(s=>(
-          <div key={s.id} style={{marginBottom:18,paddingBottom:18,borderBottom:`1px solid ${C.border}`}}>
-            {/* Numbers */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-              <div style={{background:"#fffbf0",borderRadius:10,padding:"14px 16px",border:`1px solid #ffe9a0`}}>
-                <p style={{fontSize:11,color:"#7a6000",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",margin:"0 0 4px"}}>{s.oral.label}</p>
-                <p style={{fontSize:30,fontWeight:600,color:"#b07d10",margin:"0 0 2px",letterSpacing:"-0.02em",lineHeight:1}}>{s.oral.value}</p>
-                <p style={{fontSize:11,color:"#7a6000",margin:0}}>{s.oral.sub}</p>
-              </div>
-              <div style={{background:"#fffbf0",borderRadius:10,padding:"14px 16px",border:`1px solid #ffe9a0`}}>
-                <p style={{fontSize:11,color:"#7a6000",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",margin:"0 0 4px"}}>{s.iv.label}</p>
-                <p style={{fontSize:30,fontWeight:600,color:"#b07d10",margin:"0 0 2px",letterSpacing:"-0.02em",lineHeight:1}}>{s.iv.value}</p>
-                <p style={{fontSize:11,color:"#7a6000",margin:0}}>{s.iv.sub}</p>
-              </div>
-            </div>
-            {/* Source citation */}
-            <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
-              <div style={{flexShrink:0,marginTop:2}}>
-                <div style={{width:8,height:8,borderRadius:"50%",background:"#f39c12"}}/>
-              </div>
-              <div>
-                <p style={{fontSize:12,fontWeight:600,color:C.dark,margin:"0 0 1px"}}>{s.authors} — {s.journal}</p>
-                <p style={{fontSize:12,color:C.mid,margin:"0 0 4px",lineHeight:1.6,fontStyle:"italic"}}>{s.title}</p>
-                <p style={{fontSize:11,color:C.mid,margin:"0 0 4px"}}>{s.note}</p>
-                <a href={s.url} target="_blank" rel="noreferrer"
-                   style={{fontSize:11,color:C.teal,wordBreak:"break-all",display:"inline-flex",alignItems:"center",gap:4}}>
-                  {s.url} <span style={{fontSize:10}}>↗</span>
-                </a>
-              </div>
-            </div>
+      {hasVol && (<>
+
+        {/* Section 1 — Cost numbers */}
+        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderLeft:`4px solid ${C.teal}`,borderRadius:14,padding:"1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.06)"}}>
+          <p style={{fontSize:10,fontWeight:700,color:C.teal,textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 14px"}}>01 — What it costs</p>
+          <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:14}}>
+            <Stat value={fmtINR(monthlyTotal)} label="Per month" sub={`for ${(targetVol/1000/12).toFixed(0)} MT/month`} />
+            <Stat value={fmtINR(additionalTotal)} label="Per year" sub="total fortification cost" color={C.teal} bg={C.tealLight} />
+            <Stat value={fmt2(additionalUnitTotal)} label="Per kg" sub="additional above existing cost" color={C.mid} bg={C.bg} />
+            {perPersonMonth!=null && <Stat value={fmt2(perPersonMonth)} label="Per person / month" sub="individual cost" color={C.mid} bg={C.bg} />}
           </div>
-        ))}
-
-        {/* Plessow population-level note */}
-        <div style={{paddingTop:4}}>
-          <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
-            <div style={{flexShrink:0,marginTop:2}}><div style={{width:8,height:8,borderRadius:"50%",background:"#e0c060"}}/></div>
-            <div>
-              <p style={{fontSize:12,fontWeight:600,color:C.dark,margin:"0 0 1px"}}>Plessow, R., et al. (2015) — PLOS ONE, Winterthur Institute / INCLEN New Delhi</p>
-              <p style={{fontSize:12,color:C.mid,margin:"0 0 4px",lineHeight:1.6,fontStyle:"italic"}}>Social costs of iron deficiency anaemia in 6–59 month-old children in India</p>
-              <div style={{background:"#f5f5f0",borderRadius:8,padding:"8px 12px",marginBottom:6,border:`1px solid ${C.border}`}}>
-                <p style={{fontSize:12,color:C.dark,margin:0,lineHeight:1.6}}>
-                  <strong style={{color:"#b07d10",fontSize:14}}>USD 24,001 million/year</strong> in production losses — <strong style={{color:"#b07d10",fontSize:14}}>1.3% of India's GDP</strong>. Equivalent to <strong>125,699 complete lifespans lost</strong> every year (8.3 million DALYs).
-                </p>
-                <p style={{fontSize:11,color:C.mid,margin:"6px 0 0"}}>Note: these are the costs of <em>not acting</em> — not individual treatment costs. Best used for national-scale policy pitches, not per-beneficiary comparisons.</p>
-              </div>
-              <a href="https://doi.org/10.1371/journal.pone.0136581" target="_blank" rel="noreferrer"
-                 style={{fontSize:11,color:C.teal,wordBreak:"break-all",display:"inline-flex",alignItems:"center",gap:4}}>
-                https://doi.org/10.1371/journal.pone.0136581 <span style={{fontSize:10}}>↗</span>
-              </a>
-            </div>
+          <div style={{background:C.peachLight,borderRadius:9,padding:"12px 16px",border:`1px solid ${C.peachMid}`}}>
+            <p style={{fontSize:13,color:C.dark,margin:0,lineHeight:1.75}}>
+              <strong style={{color:C.red}}>At {fmt2(additionalUnitTotal)} per kg</strong> — less than the cost of a cup of tea — every beneficiary in {geoName||"the program"} receives fortified atta with improved iron, folic acid, and B vitamins. No new infrastructure. No change to beneficiary behaviour.
+            </p>
           </div>
         </div>
-      </div>
 
-      {/* Caveat */}
-      <div style={{padding:"12px 16px",background:"#fffbf0",borderRadius:9,border:`1px solid #ffe9a0`}}>
-        <p style={{fontSize:12,color:"#7a6000",margin:0,lineHeight:1.65}}>
-          <strong>⚠ Team note:</strong> Treatment cost figures above apply specifically to <strong>pregnant women with moderate-to-severe IDA</strong>. Confirm the most appropriate comparator with the team before using in external pitches. For general population pitches, the Plessow et al. GDP loss figure may be more appropriate.
-        </p>
+        {/* Section 2 — Cost of inaction */}
+        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderLeft:`4px solid #f39c12`,borderRadius:14,padding:"1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.06)"}}>
+          <p style={{fontSize:10,fontWeight:700,color:"#b07d10",textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 14px"}}>02 — The cost of not acting</p>
+          <p style={{fontSize:14,fontWeight:600,color:C.dark,margin:"0 0 14px",lineHeight:1.4}}>Treating iron deficiency anaemia costs far more than preventing it.</p>
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12,marginBottom:16}}>
+            {[
+              { label:"Oral iron (per patient/year)", value:"₹3,902", source:"Joshi et al., 2026" },
+              { label:"IV iron sucrose (per patient/year)", value:"₹13,742", source:"Joshi et al., 2026" },
+              { label:"Annual production losses — India", value:"USD 24,001 M", source:"Plessow et al., 2015" },
+            ].map((item,i)=>(
+              <div key={i} style={{background:"#fffbf0",borderRadius:10,padding:"14px 16px",border:`1px solid #ffe9a0`}}>
+                <p style={{fontSize:11,color:"#7a6000",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 6px",lineHeight:1.3}}>{item.label}</p>
+                <p style={{fontSize:28,fontWeight:600,color:"#b07d10",margin:"0 0 4px",letterSpacing:"-0.02em",lineHeight:1}}>{item.value}</p>
+                <p style={{fontSize:11,color:"#9a8060",margin:0}}>{item.source}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{fontSize:12,color:C.mid,lineHeight:1.7,margin:0}}>
+            Iron deficiency anaemia costs India an estimated <strong>1.3% of GDP annually</strong> in lost productivity (Plessow et al., 2015). The production losses — USD 24,001 million per year — represent 125,699 complete lifespans lost every year. Fortification at the point of milling addresses the root cause at a fraction of the treatment cost.
+          </p>
+        </div>
+
+        {/* Section 3 — Why this works */}
+        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderLeft:`4px solid ${C.teal}`,borderRadius:14,padding:"1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.06)"}}>
+          <p style={{fontSize:10,fontWeight:700,color:C.teal,textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 14px"}}>03 — Why wheat flour fortification works</p>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:10}}>
+            {[
+              { icon:"🏭", title:"Works through existing systems", body:"Fortification happens at the mill — the same flour, the same supply chain. No new logistics required." },
+              { icon:"🍽️", title:"No behaviour change needed", body:"Fortified atta is indistinguishable from standard atta. Beneficiary uptake is automatic and universal." },
+              { icon:"📋", title:"FSSAI-mandated standard", body:"Wheat flour fortification is mandated under FSSAI regulations — this program supports compliance with existing law." },
+              { icon:"📈", title:"Cost-effective at scale", body:"At " + fmt2(additionalUnitTotal) + "/kg, fortification costs less per beneficiary than any clinical treatment for IDA." },
+            ].map((r,i)=>(
+              <div key={i} style={{background:C.bg,borderRadius:10,padding:"1rem 1.1rem",border:`1px solid ${C.border}`}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                  <span style={{fontSize:20}}>{r.icon}</span>
+                  <p style={{fontSize:13,fontWeight:600,color:C.dark,margin:0}}>{r.title}</p>
+                </div>
+                <p style={{fontSize:12,color:C.mid,margin:0,lineHeight:1.65}}>{r.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* References */}
+        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.06)"}}>
+          <p style={{fontSize:10,fontWeight:700,color:C.light,textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 10px"}}>Evidence sources</p>
+          {[
+            { ref:"Joshi, B., et al. (2026)", detail:"Cost-effectiveness of IV iron in pregnant women with IDA. Health Economics Review (In Press), ICMR-NIRRCH Mumbai.", url:"https://doi.org/10.1186/s13561-026-00790-4" },
+            { ref:"Saha, S., et al. (2024)", detail:"Cost-effectiveness of IV iron sucrose vs oral iron. Health Economics Review, IIPHG Gandhinagar.", url:"https://doi.org/10.1186/s13561-023-00474-3" },
+            { ref:"Plessow, R., et al. (2015)", detail:"Social costs of IDA in 6–59 month-old children in India. PLOS ONE / INCLEN New Delhi.", url:"https://doi.org/10.1371/journal.pone.0136581" },
+          ].map((s,i)=>(
+            <div key={i} style={{display:"flex",gap:10,padding:"8px 0",borderBottom:i<2?`1px solid ${C.border}`:"none",alignItems:"flex-start"}}>
+              <div style={{width:8,height:8,borderRadius:"50%",background:C.teal,flexShrink:0,marginTop:4}}/>
+              <div>
+                <p style={{fontSize:12,fontWeight:600,color:C.dark,margin:"0 0 1px"}}>{s.ref}</p>
+                <p style={{fontSize:12,color:C.mid,margin:"0 0 3px",lineHeight:1.5,fontStyle:"italic"}}>{s.detail}</p>
+                <a href={s.url} target="_blank" rel="noreferrer" style={{fontSize:11,color:C.teal,display:"inline-flex",alignItems:"center",gap:3}}>{s.url} <span style={{fontSize:10}}>↗</span></a>
+              </div>
+            </div>
+          ))}
+          <p style={{fontSize:11,color:C.light,margin:"10px 0 0",fontStyle:"italic"}}>⚠ Treatment cost figures apply to pregnant women with moderate-to-severe IDA. Confirm the appropriate comparator with the team before external distribution.</p>
+        </div>
+
+      </>)}
+
+      {/* Download button */}
+      <div style={{display:"flex",justifyContent:"flex-end",marginBottom:"1rem"}}>
+        <button
+          onClick={()=>generatePitchPDF({ geoName, targetVol, additionalUnitTotal, additionalTotal, population, monthlyTotal, perPersonMonth })}
+          disabled={!hasVol}
+          style={{display:"flex",alignItems:"center",gap:8,padding:"12px 28px",fontSize:13,fontWeight:600,borderRadius:9,border:"none",cursor:hasVol?"pointer":"not-allowed",background:hasVol?C.red:"#e0e0e0",color:"#fff",opacity:hasVol?1:0.6,letterSpacing:"0.01em"}}>
+          <span style={{fontSize:16}}>⬇</span> Download stakeholder brief (PDF)
+        </button>
       </div>
     </div>
   );
@@ -716,7 +895,7 @@ export default function App() {
 
   const tabs = [
     { id:"calculator", label:"💰 Budget calculator" },
-    { id:"pitch",      label:"📣 Pitch builder" },
+    { id:"pitch",      label:"📋 Stakeholder brief" },
   ];
 
   return (
@@ -744,7 +923,7 @@ export default function App() {
       </div>
 
       <div style={{maxWidth:940,margin:"0 auto",padding:"1.75rem 1.75rem 4rem"}}>
-        {activeTab==="pitch" && <PitchTab targetVol={targetVol} additionalUnitTotal={additionalUnitTotal} additionalTotal={additionalTotal} population={population} kgPerBenef={kgPerBenef} totalMonthlyKg={totalMonthlyKg} volumeUnit={volumeUnit} />}
+        {activeTab==="pitch" && <PitchTab targetVol={targetVol} additionalUnitTotal={additionalUnitTotal} additionalTotal={additionalTotal} population={population} geoName={geoName} />}
 
         {activeTab==="calculator" && (          <>
             {/* How to use */}
