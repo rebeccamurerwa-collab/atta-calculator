@@ -629,7 +629,6 @@ async function generatePitchPDF({ geoName, targetVol, additionalUnitTotal, addit
   const reasons = [
     ["Already in the supply chain", "Wheat flour is distributed through PM-POSHAN and other government schemes. Fortification requires no new infrastructure — only a microdoser at the mill."],
     ["No behaviour change required", "Fortified atta looks, cooks, and tastes identical to standard atta. Beneficiary uptake is automatic."],
-    ["FSSAI-mandated standard", "Fortification of wheat flour is mandated under FSSAI regulations. This program supports compliance with existing law."],
     ["Cost-effective at scale", "At Rs." + (additionalUnitTotal||0).toFixed(2) + "/kg, fortification costs less per beneficiary than any clinical intervention for treating IDA."],
   ];
 
@@ -761,9 +760,8 @@ function PitchTab({ targetVol, additionalUnitTotal, additionalTotal, population,
           <p style={{fontSize:10,fontWeight:700,color:C.teal,textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 14px"}}>03 — Why wheat flour fortification works</p>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:10}}>
             {[
-              { icon:"🏭", title:"No new infrastructure needed", body:"Micronutrients are added at the mill before the flour is packed. The same trucks, the same ration shops, the same process — just better flour." },
+              { icon:"🏭", title:"Minimal additional equipment", body:"A microdoser is installed at the mill to add nutrients during milling — a small, low-cost device already included in the cost estimate above. Distribution, packaging, and delivery all remain unchanged." },
               { icon:"🍽️", title:"Families don't need to do anything differently", body:"Fortified atta looks, smells, and cooks exactly the same as regular atta. Every person who receives it automatically benefits." },
-              { icon:"📋", title:"Required by national food safety law", body:"India's food safety authority (FSSAI) has mandated fortification of wheat flour. This program brings the state into compliance with that requirement." },
               { icon:"📈", title:"Far cheaper than treating anaemia", body:"At " + fmt2(additionalUnitTotal) + "/kg, the cost of fortification is a small fraction of what the government spends treating anaemia patients in health facilities." },
             ].map((r,i)=>(
               <div key={i} style={{background:C.bg,borderRadius:10,padding:"1rem 1.1rem",border:`1px solid ${C.border}`}}>
