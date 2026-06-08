@@ -481,6 +481,158 @@ async function generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal
   doc.save(`fortify-health-budget-${(geoName||"report").toLowerCase().replace(/\s+/g,"-")}.pdf`);
 }
 
+
+function PitchTab({ targetVol, additionalUnitTotal, additionalTotal, population, kgPerBenef, totalMonthlyKg, volumeUnit }) {
+  const hasVol = targetVol > 0;
+  const monthlyTotal = additionalTotal / 12;
+  const perPersonYear = population && parseFloat(population) > 0 ? additionalTotal / parseFloat(population) : null;
+  const perPersonMonth = perPersonYear ? perPersonYear / 12 : null;
+
+  function fmtINR(n) {
+    if (!n || isNaN(n)) return "—";
+    if (n >= 10000000) return "₹" + (n/10000000).toFixed(2) + " Cr";
+    if (n >= 100000)   return "₹" + (n/100000).toFixed(2) + " L";
+    return "₹" + Math.round(n).toLocaleString("en-IN");
+  }
+  function fmt2(n) { return n != null ? "₹" + n.toFixed(2) : "—"; }
+
+  const SOURCES = [
+    {
+      id: "joshi",
+      authors: "Joshi, B., et al. (2026)",
+      title: "Cost-effectiveness of intravenous iron in pregnant women with iron deficiency anaemia",
+      journal: "Health Economics Review (Article in Press), ICMR-NIRRCH Mumbai",
+      url: "https://doi.org/10.1186/s13561-026-00790-4",
+      oral: { label:"Oral iron sucrose", value:"₹3,902", sub:"per patient/year (societal cost)" },
+      iv:   { label:"IV iron sucrose",   value:"₹13,742", sub:"per patient/year (full course)" },
+      note: "INR at 2025 prices. Pregnant women with moderate-to-severe IDA. 98% probability of cost-effectiveness.",
+    },
+    {
+      id: "saha",
+      authors: "Saha, S., et al. (2024)",
+      title: "Cost-effectiveness of IV iron sucrose vs oral iron in pregnant women with IDA",
+      journal: "Health Economics Review, IIPHG Gandhinagar",
+      url: "https://doi.org/10.1186/s13561-023-00474-3",
+      oral: { label:"Oral iron",     value:"USD 49 (≈₹3,900)", sub:"per patient, discounted societal cost" },
+      iv:   { label:"IV iron sucrose", value:"USD 87 (≈₹6,923)", sub:"ICER: USD 9.84/QALY — 0.049% of per-capita GDP" },
+      note: "188 pregnant women, Gujarat. 1 USD = ₹79.58. Oral iron failed clinically — Hb continued to fall.",
+    },
+  ];
+
+  const BigNum = ({ value, label, color }) => (
+    <div style={{textAlign:"center",padding:"1.1rem 0.5rem"}}>
+      <p style={{fontSize:32,fontWeight:600,color:color||C.teal,margin:"0 0 4px",letterSpacing:"-0.02em",lineHeight:1}}>{value}</p>
+      <p style={{fontSize:12,color:C.mid,margin:0,lineHeight:1.4}}>{label}</p>
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Monthly / Annual cost block */}
+      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderLeft:`4px solid ${C.teal}`,borderRadius:14,padding:"1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.08)"}}>
+        <p style={{fontSize:11,fontWeight:700,color:C.teal,textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 4px"}}>Fortification cost — your program</p>
+        {!hasVol && (
+          <p style={{fontSize:13,color:C.light,margin:"1rem 0",fontStyle:"italic"}}>Enter volume data in the Budget calculator tab to populate this section.</p>
+        )}
+        {hasVol && (
+          <>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:0,borderRadius:10,border:`1px solid ${C.border}`,overflow:"hidden",marginTop:14}}>
+              <div style={{borderRight:`1px solid ${C.border}`,background:C.tealLight}}>
+                <BigNum value={fmtINR(monthlyTotal)} label="per month" color={C.teal} />
+              </div>
+              <div style={{borderRight:`1px solid ${C.border}`,background:"#fff"}}>
+                <BigNum value={fmtINR(additionalTotal)} label="per year" color={C.teal} />
+              </div>
+              <div style={{borderRight:`1px solid ${C.border}`,background:"#fff"}}>
+                <BigNum value={fmt2(additionalUnitTotal)} label="per kg" color={C.mid} />
+              </div>
+              {perPersonMonth != null && (
+                <div style={{background:"#fff"}}>
+                  <BigNum value={fmt2(perPersonMonth)} label="per person / month" color={C.mid} />
+                </div>
+              )}
+            </div>
+            {/* Pitch line */}
+            <div style={{marginTop:14,padding:"12px 16px",background:C.peachLight,borderRadius:9,border:`1px solid ${C.peachMid}`}}>
+              <p style={{fontSize:13,color:C.dark,margin:0,lineHeight:1.75}}>
+                <strong style={{color:C.red}}>Pitch line:</strong>{" "}
+                "Fortifying your atta program costs <strong>{fmtINR(monthlyTotal)}/month</strong> ({fmtINR(additionalTotal)}/year){perPersonMonth!=null?` — just ${fmt2(perPersonMonth)} per beneficiary per month`:""}.
+                By comparison, treating a single case of iron deficiency anaemia with oral iron costs upwards of <strong>₹3,902 per patient</strong> (Joshi et al., 2026)."
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Comparison — anaemia management costs */}
+      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderLeft:`4px solid #f39c12`,borderRadius:14,padding:"1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.08)"}}>
+        <p style={{fontSize:11,fontWeight:700,color:"#b07d10",textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 14px"}}>Comparator — anaemia management cost per patient</p>
+
+        {SOURCES.map(s=>(
+          <div key={s.id} style={{marginBottom:18,paddingBottom:18,borderBottom:`1px solid ${C.border}`}}>
+            {/* Numbers */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+              <div style={{background:"#fffbf0",borderRadius:10,padding:"14px 16px",border:`1px solid #ffe9a0`}}>
+                <p style={{fontSize:11,color:"#7a6000",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",margin:"0 0 4px"}}>{s.oral.label}</p>
+                <p style={{fontSize:30,fontWeight:600,color:"#b07d10",margin:"0 0 2px",letterSpacing:"-0.02em",lineHeight:1}}>{s.oral.value}</p>
+                <p style={{fontSize:11,color:"#7a6000",margin:0}}>{s.oral.sub}</p>
+              </div>
+              <div style={{background:"#fffbf0",borderRadius:10,padding:"14px 16px",border:`1px solid #ffe9a0`}}>
+                <p style={{fontSize:11,color:"#7a6000",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",margin:"0 0 4px"}}>{s.iv.label}</p>
+                <p style={{fontSize:30,fontWeight:600,color:"#b07d10",margin:"0 0 2px",letterSpacing:"-0.02em",lineHeight:1}}>{s.iv.value}</p>
+                <p style={{fontSize:11,color:"#7a6000",margin:0}}>{s.iv.sub}</p>
+              </div>
+            </div>
+            {/* Source citation */}
+            <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+              <div style={{flexShrink:0,marginTop:2}}>
+                <div style={{width:8,height:8,borderRadius:"50%",background:"#f39c12"}}/>
+              </div>
+              <div>
+                <p style={{fontSize:12,fontWeight:600,color:C.dark,margin:"0 0 1px"}}>{s.authors} — {s.journal}</p>
+                <p style={{fontSize:12,color:C.mid,margin:"0 0 4px",lineHeight:1.6,fontStyle:"italic"}}>{s.title}</p>
+                <p style={{fontSize:11,color:C.mid,margin:"0 0 4px"}}>{s.note}</p>
+                <a href={s.url} target="_blank" rel="noreferrer"
+                   style={{fontSize:11,color:C.teal,wordBreak:"break-all",display:"inline-flex",alignItems:"center",gap:4}}>
+                  {s.url} <span style={{fontSize:10}}>↗</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Plessow population-level note */}
+        <div style={{paddingTop:4}}>
+          <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+            <div style={{flexShrink:0,marginTop:2}}><div style={{width:8,height:8,borderRadius:"50%",background:"#e0c060"}}/></div>
+            <div>
+              <p style={{fontSize:12,fontWeight:600,color:C.dark,margin:"0 0 1px"}}>Plessow, R., et al. (2015) — PLOS ONE, Winterthur Institute / INCLEN New Delhi</p>
+              <p style={{fontSize:12,color:C.mid,margin:"0 0 4px",lineHeight:1.6,fontStyle:"italic"}}>Social costs of iron deficiency anaemia in 6–59 month-old children in India</p>
+              <div style={{background:"#f5f5f0",borderRadius:8,padding:"8px 12px",marginBottom:6,border:`1px solid ${C.border}`}}>
+                <p style={{fontSize:12,color:C.dark,margin:0,lineHeight:1.6}}>
+                  <strong style={{color:"#b07d10",fontSize:14}}>USD 24,001 million/year</strong> in production losses — <strong style={{color:"#b07d10",fontSize:14}}>1.3% of India's GDP</strong>. Equivalent to <strong>125,699 complete lifespans lost</strong> every year (8.3 million DALYs).
+                </p>
+                <p style={{fontSize:11,color:C.mid,margin:"6px 0 0"}}>Note: these are the costs of <em>not acting</em> — not individual treatment costs. Best used for national-scale policy pitches, not per-beneficiary comparisons.</p>
+              </div>
+              <a href="https://doi.org/10.1371/journal.pone.0136581" target="_blank" rel="noreferrer"
+                 style={{fontSize:11,color:C.teal,wordBreak:"break-all",display:"inline-flex",alignItems:"center",gap:4}}>
+                https://doi.org/10.1371/journal.pone.0136581 <span style={{fontSize:10}}>↗</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Caveat */}
+      <div style={{padding:"12px 16px",background:"#fffbf0",borderRadius:9,border:`1px solid #ffe9a0`}}>
+        <p style={{fontSize:12,color:"#7a6000",margin:0,lineHeight:1.65}}>
+          <strong>⚠ Team note:</strong> Treatment cost figures above apply specifically to <strong>pregnant women with moderate-to-severe IDA</strong>. Confirm the most appropriate comparator with the team before using in external pitches. For general population pitches, the Plessow et al. GDP loss figure may be more appropriate.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState("calculator");
   const [geoName, setGeoName] = useState("");
@@ -564,6 +716,7 @@ export default function App() {
 
   const tabs = [
     { id:"calculator", label:"💰 Budget calculator" },
+    { id:"pitch",      label:"📣 Pitch builder" },
   ];
 
   return (
@@ -591,6 +744,8 @@ export default function App() {
       </div>
 
       <div style={{maxWidth:940,margin:"0 auto",padding:"1.75rem 1.75rem 4rem"}}>
+        {activeTab==="pitch" && <PitchTab targetVol={targetVol} additionalUnitTotal={additionalUnitTotal} additionalTotal={additionalTotal} population={population} kgPerBenef={kgPerBenef} totalMonthlyKg={totalMonthlyKg} volumeUnit={volumeUnit} />}
+
         {activeTab==="calculator" && (          <>
             {/* How to use */}
             <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,marginBottom:"1rem",boxShadow:cardShadow,overflow:"hidden"}}>
