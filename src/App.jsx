@@ -4,9 +4,10 @@ const LOGO_B64 = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BS
 
 const INDIAN_STATES = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Jammu & Kashmir","Ladakh","Puducherry","Chandigarh","Dadra & Nagar Haveli","Daman & Diu","Lakshadweep","Andaman & Nicobar Islands"];
 
-const DEFAULT_COSTS = { transportMilling:1.20, milling:2.20, packaging:0.50, fortification:0.11, transportDist:1.18 };
+const DEFAULT_COSTS = { procurement:24.22, transportMilling:0.57, milling:3.69, packaging:0.84, fortification:0.28, transportDist:0.50 };
 
 const ALL_COSTS = [
+  { key:"procurement",      label:"Procurement",                   grainAdd:false, flourAdd:false },
   { key:"transportMilling", label:"Transport for milling",         grainAdd:true,  flourAdd:false },
   { key:"milling",          label:"Milling (cleaning & grinding)", grainAdd:true,  flourAdd:false },
   { key:"packaging",        label:"Packaging",                     grainAdd:true,  flourAdd:false },
@@ -50,21 +51,8 @@ const SCORE = {
   modern:{ compliance:3, infrastructure:3, shelfLife:3, reach:3, automation:3 },
 };
 
-const C = {
-  // Primary brand colours
-  red:"#dc6059",       teal:"#0097a7",      peach:"#ffd8cb",
-  // Derived tints
-  redLight:"#fdf1f0",  redMid:"#f5b8b5",
-  tealLight:"#e0f7f9", tealMid:"#4ec4cf",   tealDark:"#006a75",
-  peachLight:"#fff5f2",peachMid:"#ffc4ad",
-  // Neutral warm yellows kept for accent notes
-  yellow:"#ffdc8b",    yellowLight:"#fffbf0",yellowMid:"#ffe9a0",
-  // Text & structure
-  dark:"#1a2b2d",      mid:"#4a6366",        light:"#8aa5a8",
-  border:"#dde8e9",    bg:"#f7fafa",         sand:"#ddd8cb",
-  white:"#ffffff",
-};
-const PIE_COLORS = [C.teal, C.red, C.peach, "#e8927c","#33b5c2","#a0d8de","#f5c842","#6dd6a0"];
+const C = { red:"#dc6059", yellow:"#ffdc8b", teal:"#0097a7", redLight:"#fdf1f0", redMid:"#f5b8b5", tealLight:"#e0f5f7", tealMid:"#4ec4cf", yellowLight:"#fffbf0", yellowMid:"#ffe9a0", dark:"#1a2e30", mid:"#4a6366", light:"#8aa5a8", border:"#dde8e9", bg:"#f7fafa", sand:"#ddd8cb" };
+const PIE_COLORS = [C.red, C.teal, C.yellow, "#e8927c","#33b5c2","#a0d8de","#f5c842","#6dd6a0"];
 
 const fmt2 = n => Number(n).toFixed(2);
 const fmtBig = n => {
@@ -75,13 +63,27 @@ const fmtBig = n => {
 };
 
 const globalStyle = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', -apple-system, sans-serif; background: ${C.bg}; color: ${C.dark}; min-height: 100vh; -webkit-font-smoothing: antialiased; }
-  input, select { font-family: inherit; font-size: 13px; padding: 10px 13px; border: 1.5px solid ${C.border}; border-radius: 9px; outline: none; background: #fff; color: ${C.dark}; width: 100%; transition: border-color 0.15s, box-shadow 0.15s; }
-  input:focus, select:focus { border-color: ${C.teal}; box-shadow: 0 0 0 3px rgba(0,151,167,0.14); }
+  html { -webkit-text-size-adjust: 100%; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: ${C.bg}; color: ${C.dark}; min-height: 100vh; overflow-x: hidden; }
+  input, select { font-family: inherit; font-size: 13px; padding: 9px 12px; border: 1.5px solid ${C.border}; border-radius: 8px; outline: none; background: #fff; color: ${C.dark}; width: 100%; transition: border-color 0.15s, box-shadow 0.15s; }
+  input:focus, select:focus { border-color: ${C.teal}; box-shadow: 0 0 0 3px rgba(0,151,167,0.12); }
   input::placeholder { color: ${C.light}; }
   button { font-family: inherit; cursor: pointer; }
+  .summary-cards { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 12px; margin-bottom: 1rem; }
+  .breakdown-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 12px; margin-bottom: 1rem; align-items: start; }
+  .scroll-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  @media (max-width: 640px) {
+    .summary-cards { grid-template-columns: 1fr !important; }
+    .breakdown-grid { grid-template-columns: 1fr !important; }
+    .header-pad { padding: 1.25rem 1rem 0 !important; }
+    .content-pad { padding: 1rem 1rem 2rem !important; }
+    .card-pad { padding: 1rem 1rem !important; }
+    .hide-mobile { display: none !important; }
+    .export-row { flex-direction: column !important; }
+    .export-row > * { width: 100% !important; }
+  }
 `;
 
 function PieChart({ data }) {
@@ -130,7 +132,7 @@ function SectionTitle({ children, sub }) {
   return (
     <div style={{marginBottom:14}}>
       <p style={{fontSize:15,fontWeight:600,color:C.dark,margin:"0 0 2px"}}>{children}</p>
-      {sub&&<p style={{fontSize:12,color:C.mid,margin:0,opacity:0.75}}>{sub}</p>}
+      {sub&&<p style={{fontSize:12,color:C.light,margin:0}}>{sub}</p>}
     </div>
   );
 }
@@ -149,7 +151,7 @@ const HOW_TO = [
   { icon:"📋", title:"Fill in the inputs", points:[
     "Select the state and what you currently supply — wheat grain or wheat flour",
     "Enter either total beneficiaries + monthly kg per person, or your total monthly consumption — whichever you know",
-    "Default costs are based on Fortify Health Implementation team estimates and can be edited to reflect your context",
+    "Default costs are based on a Haryana case study and can be edited to reflect your context",
   ]},
   { icon:"📊", title:"Interpret the results", points:[
     "The headline figure shows your additional cost — what you would actually be adding on top of existing operations",
@@ -176,8 +178,8 @@ function MillTab() {
   });
   return (
     <div>
-      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.08), 0 1px 2px rgba(0,0,0,0.04)"}}>
-        <p style={{fontSize:13,color:C.mid,margin:"0 0 14px",lineHeight:1.7}}>Select a mill type to explore its suitability for your fortified atta program.</p>
+      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
+        <p style={{fontSize:13,color:C.mid,margin:"0 0 14px",lineHeight:1.7}}>Select a mill type to explore its suitability for your fortified atta program. Information is drawn from the <em>Wheat Flour Supply Chain Analysis</em>, Food Fortification Initiative (FFI), Haryana, 2016.</p>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
           {MILLS.map(m=>(
             <button key={m.id} onClick={()=>setSelectedMill(m.id)}
@@ -188,7 +190,7 @@ function MillTab() {
           ))}
         </div>
       </div>
-      <div style={{background:C.tealLight,border:`1.5px solid ${C.tealMid}`,borderRadius:12,padding:"1.1rem 1.4rem",marginBottom:"1rem"}}>
+      <div style={{background:C.tealLight,border:`1px solid ${C.tealMid}`,borderRadius:12,padding:"1rem 1.25rem",marginBottom:"1rem"}}>
         <p style={{fontSize:13,fontWeight:600,color:C.teal,margin:"0 0 6px"}}>{mill.label} — {mill.sub}</p>
         <p style={{fontSize:13,color:"#2a5f66",lineHeight:1.7,margin:"0 0 14px"}}>{MILL_NOTES[selectedMill]}</p>
         <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8}}>
@@ -201,7 +203,7 @@ function MillTab() {
         </div>
         <p style={{fontSize:10,color:C.light,margin:"8px 0 0"}}>● ● ● High &nbsp;·&nbsp; ● ● ○ Medium &nbsp;·&nbsp; ● ○ ○ Low</p>
       </div>
-      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.08), 0 1px 2px rgba(0,0,0,0.04)"}}>
+      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
         <SectionTitle sub="Product quality and regulatory compliance">Quality & specifications</SectionTitle>
         <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
@@ -228,7 +230,7 @@ function MillTab() {
           </table>
         </div>
       </div>
-      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:"0 2px 8px rgba(0,151,167,0.08), 0 1px 2px rgba(0,0,0,0.04)"}}>
+      <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:"0 1px 4px rgba(0,151,167,0.06)"}}>
         <SectionTitle sub="Procurement, distribution and operational considerations">Operational aspects</SectionTitle>
         <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
@@ -262,7 +264,7 @@ function MillTab() {
 async function generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal, additionalTotal, fullTotalCost, costs, visibleCosts, extraCats, isGrain, volumeUnit, totalMonthlyKg, reportTitle }) {
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
   const W = 210, ml = 18, mr = 18, cw = W - ml - mr;
-  const red = [220,96,89], teal = [0,151,167], peach = [255,216,203], dark = [26,43,45], mid = [74,99,102], light = [138,165,168], lightBg = [247,250,250], peachLight = [255,245,242];
+  const red = [220,96,89], teal = [0,151,167], peach = [255,216,203], dark = [26,46,48], mid = [74,99,102], light = [138,165,168], lightBg = [247,250,250], peachLight = [255,248,246];
 
   const fmt2 = n => Number(n).toFixed(2);
   const fmtBig = n => {
@@ -398,8 +400,9 @@ async function generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal
   doc.text(fmtBig(additionalTotal), ml+cw, y+5, {align:"right"});
   y += 14;
 
+  // Note
   doc.setFontSize(7.5); doc.setFont("helvetica","italic"); doc.setTextColor(...mid);
-  doc.text(`Costs based on Fortify Health Implementation team estimates. Transport assumes ~100 km average distance.`, ml, y);
+  doc.text(`Full program cost including procurement: ${fmtBig(fullTotalCost)}`, ml, y);
   y += 12;
 
   // Pie chart section
@@ -481,335 +484,6 @@ async function generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal
   doc.save(`fortify-health-budget-${(geoName||"report").toLowerCase().replace(/\s+/g,"-")}.pdf`);
 }
 
-
-async function generatePitchPDF({ geoName, targetVol, additionalUnitTotal, additionalTotal, population, monthlyTotal, perPersonMonth }) {
-  const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
-  const W = 210, ml = 18, mr = 18, cw = W - ml - mr;
-  const red = [220,96,89], teal = [0,151,167], peach = [255,216,203], dark = [26,43,45], mid = [74,99,102], light = [138,165,168], peachLight = [255,245,242], tealLight = [224,247,249];
-
-  const fmtINR = n => {
-    if (!n || isNaN(n)) return "—";
-    if (n >= 10000000) return "Rs." + (n/10000000).toFixed(2) + " Cr";
-    if (n >= 100000)   return "Rs." + (n/100000).toFixed(2) + " L";
-    return "Rs." + Math.round(n).toLocaleString("en-IN");
-  };
-  const fmt2 = n => n != null ? "Rs." + n.toFixed(2) : "—";
-  const geo = geoName || "India";
-  let y = 0;
-
-  // Header band
-  doc.setFillColor(...red);
-  doc.rect(0, 0, W, 42, "F");
-  doc.addImage(LOGO_B64, "PNG", ml, 5, 22, 22);
-  doc.setTextColor(255,255,255);
-  doc.setFontSize(8); doc.setFont("helvetica","normal");
-  doc.text("FORTIFY HEALTH", ml+26, 13);
-  doc.setFontSize(18); doc.setFont("helvetica","bold");
-  doc.text("The Case for Wheat Flour Fortification", ml+26, 23);
-  doc.setFontSize(10); doc.setFont("helvetica","normal");
-  doc.text(geo + " — Government Stakeholder Brief", ml+26, 31);
-  doc.setFontSize(8); doc.setTextColor(255,200,200);
-  doc.text("Prepared by Fortify Health  |  " + new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"long",year:"numeric"}), W-mr, 37, {align:"right"});
-  y = 52;
-
-  // Section 1 — The opportunity
-  doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.setTextColor(...light);
-  doc.text("01  THE OPPORTUNITY", ml, y); y += 5;
-  doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.setTextColor(...dark);
-  doc.text("Iron deficiency anaemia is the most prevalent nutritional disorder in " + geo + ".", ml, y, {maxWidth:cw}); y += 8;
-  doc.setFontSize(10); doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
-  const para1 = "Wheat flour fortification is one of the most cost-effective, evidence-backed public health interventions available. By adding micronutrients at the mill — at a marginal additional cost — every beneficiary receiving atta through existing government schemes receives improved nutrition with no change to their behaviour or food habits.";
-  const lines1 = doc.splitTextToSize(para1, cw);
-  doc.text(lines1, ml, y); y += lines1.length * 5 + 6;
-
-  // Section 2 — Program cost
-  doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.setTextColor(...light);
-  doc.text("02  WHAT IT COSTS — " + geo.toUpperCase(), ml, y); y += 5;
-
-  // Big number cards
-  const nums = [
-    { label:"Additional cost per kg", value: fmt2(additionalUnitTotal), sub:"above existing procurement cost" },
-    { label:"Additional cost per month", value: fmtINR(monthlyTotal), sub: targetVol > 0 ? "for " + (targetVol/1000).toFixed(0) + " MT annual volume" : "based on program volume" },
-    { label:"Additional cost per year", value: fmtINR(additionalTotal), sub:"total program fortification cost" },
-  ];
-  if (perPersonMonth != null) {
-    nums.push({ label:"Per beneficiary per month", value: fmt2(perPersonMonth), sub:"individual cost of fortification" });
-  }
-
-  const cols = nums.length <= 3 ? 3 : 4;
-  const cardW = (cw - (cols-1)*4) / cols;
-  nums.forEach((n,i) => {
-    const x = ml + i*(cardW+4);
-    // Card bg
-    doc.setFillColor(...tealLight);
-    doc.roundedRect(x, y, cardW, 28, 2, 2, "F");
-    doc.setDrawColor(...teal); doc.setLineWidth(0.5);
-    doc.roundedRect(x, y, cardW, 28, 2, 2, "S");
-    // Label
-    doc.setFontSize(7.5); doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
-    const labelLines = doc.splitTextToSize(n.label, cardW-6);
-    doc.text(labelLines, x+3, y+5);
-    // Value
-    doc.setFontSize(n.value.length > 10 ? 13 : 16); doc.setFont("helvetica","bold"); doc.setTextColor(...teal);
-    doc.text(n.value, x+3, y+16);
-    // Sub
-    doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.setTextColor(...light);
-    const subLines = doc.splitTextToSize(n.sub, cardW-6);
-    doc.text(subLines, x+3, y+22);
-  });
-  y += 36;
-
-  // Context note
-  doc.setFillColor(...peachLight);
-  doc.roundedRect(ml, y, cw, 14, 2, 2, "F");
-  doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.setTextColor(...red);
-  doc.text("Key message:", ml+4, y+6);
-  doc.setFont("helvetica","normal"); doc.setTextColor(...dark);
-  const msg = "Fortifying atta for " + geo + " costs " + fmt2(additionalUnitTotal) + "/kg — less than a cup of tea — and reaches every beneficiary in the existing distribution system.";
-  const msgLines = doc.splitTextToSize(msg, cw-40);
-  doc.text(msgLines, ml+34, y+6);
-  y += 22;
-
-  // Section 3 — The cost of inaction
-  doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.setTextColor(...light);
-  doc.text("03  THE COST OF INACTION", ml, y); y += 5;
-  doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.setTextColor(...dark);
-  doc.text("Treating iron deficiency anaemia costs far more than preventing it.", ml, y, {maxWidth:cw}); y += 8;
-
-  // Comparison table
-  const compRows = [
-    ["Oral iron supplementation", "Rs.3,902", "per patient / year", "Joshi et al. (2026), ICMR-NIRRCH"],
-    ["IV iron sucrose (full course)", "Rs.13,742", "per patient / year", "Joshi et al. (2026), ICMR-NIRRCH"],
-    ["Wheat flour fortification", fmt2(additionalUnitTotal)+"/kg", "additional cost at mill", "Fortify Health estimates"],
-  ];
-
-  // Table header
-  doc.setFillColor(...dark);
-  doc.rect(ml, y, cw, 7, "F");
-  doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(255,255,255);
-  doc.text("Intervention", ml+3, y+5);
-  doc.text("Cost", ml+cw*0.48, y+5);
-  doc.text("Basis", ml+cw*0.62, y+5);
-  doc.text("Source", ml+cw*0.82, y+5);
-  y += 7;
-
-  compRows.forEach((row, i) => {
-    const bg = i === 2 ? tealLight : [252,252,250];
-    doc.setFillColor(...bg);
-    doc.rect(ml, y, cw, 8, "F");
-    doc.setFontSize(8.5); doc.setFont(i===2?"helvetica":"helvetica", i===2?"bold":"normal");
-    doc.setTextColor(...(i===2 ? teal : dark));
-    doc.text(row[0], ml+3, y+5.5);
-    doc.setFont("helvetica","bold"); doc.setTextColor(...(i===2?teal:red));
-    doc.text(row[1], ml+cw*0.48, y+5.5);
-    doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
-    doc.text(row[2], ml+cw*0.62, y+5.5);
-    doc.setFontSize(7.5);
-    doc.text(row[3], ml+cw*0.82, y+5.5);
-    y += 8;
-  });
-  y += 6;
-
-  // GDP impact
-  doc.setFillColor(250,248,240);
-  doc.roundedRect(ml, y, cw, 20, 2, 2, "F");
-  doc.setDrawColor(224,192,96); doc.setLineWidth(0.4);
-  doc.roundedRect(ml, y, cw, 20, 2, 2, "S");
-  doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(176,125,16);
-  doc.text("National economic burden of IDA (Plessow et al., 2015 — PLOS ONE / INCLEN New Delhi):", ml+4, y+6);
-  doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
-  doc.text("Annual production losses of USD 24,001 million — equivalent to 1.3% of India's GDP. Intangible costs of 8.3 million DALYs,", ml+4, y+11);
-  doc.text("equivalent to 125,699 complete lifespans lost every year. These are the costs of not acting.", ml+4, y+16);
-  y += 28;
-
-  // Section 4 — Why wheat flour
-  doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.setTextColor(...light);
-  doc.text("04  WHY WHEAT FLOUR FORTIFICATION", ml, y); y += 5;
-
-  const reasons = [
-    ["Already in the supply chain", "Wheat flour is distributed through PM-POSHAN and other government schemes. Fortification requires no new infrastructure — only a microdoser at the mill."],
-    ["No behaviour change required", "Fortified atta looks, cooks, and tastes identical to standard atta. Beneficiary uptake is automatic."],
-    ["Cost-effective at scale", "At Rs." + (additionalUnitTotal||0).toFixed(2) + "/kg, fortification costs less per beneficiary than any clinical intervention for treating IDA."],
-  ];
-
-  reasons.forEach(([title, body]) => {
-    if (y > 255) { doc.addPage(); y = 20; }
-    doc.setFillColor(247,250,250);
-    doc.roundedRect(ml, y, cw, 14, 2, 2, "F");
-    doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.setTextColor(...teal);
-    doc.text("✓  " + title, ml+3, y+6);
-    doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
-    const bodyLines = doc.splitTextToSize(body, cw-8);
-    doc.text(bodyLines, ml+7, y+11);
-    y += 8 + bodyLines.length * 4.5;
-  });
-  y += 4;
-
-  // References
-  if (y > 250) { doc.addPage(); y = 20; }
-  doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(...light);
-  doc.text("REFERENCES", ml, y); y += 5;
-  const refs = [
-    "Joshi, B., et al. (2026). Cost-effectiveness of IV iron in pregnant women with IDA. Health Economics Review (In Press), ICMR-NIRRCH Mumbai. https://doi.org/10.1186/s13561-026-00790-4",
-    "Saha, S., et al. (2024). Cost-effectiveness of IV iron sucrose vs oral iron in pregnant women with IDA. Health Economics Review, IIPHG Gandhinagar. https://doi.org/10.1186/s13561-023-00474-3",
-    "Plessow, R., et al. (2015). Social costs of IDA in 6-59 month-old children in India. PLOS ONE. https://doi.org/10.1371/journal.pone.0136581",
-  ];
-  refs.forEach(r => {
-    doc.setFontSize(7.5); doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
-    const rLines = doc.splitTextToSize(r, cw);
-    doc.text(rLines, ml, y); y += rLines.length * 4 + 2;
-  });
-
-  // Footer
-  const footerY = 287;
-  doc.setDrawColor(...peach); doc.line(ml, footerY-4, W-mr, footerY-4);
-  doc.setFontSize(7.5); doc.setFont("helvetica","normal"); doc.setTextColor(...light);
-  doc.text("Fortify Health  |  www.fortifyhealth.global  |  Confidential — for stakeholder use only", ml, footerY);
-  doc.text("Page 1", W-mr, footerY, {align:"right"});
-
-  doc.save("fortify-health-" + geo.toLowerCase().replace(/\s+/g,"-") + "-stakeholder-brief.pdf");
-}
-
-function PitchTab({ targetVol, additionalUnitTotal, additionalTotal, population, geoName }) {
-  const hasVol = targetVol > 0;
-  const monthlyTotal = additionalTotal / 12;
-  const perPersonYear = population && parseFloat(population) > 0 ? additionalTotal / parseFloat(population) : null;
-  const perPersonMonth = perPersonYear ? perPersonYear / 12 : null;
-
-  function fmtINR(n) {
-    if (!n || isNaN(n)) return "—";
-    if (n >= 10000000) return "₹" + (n/10000000).toFixed(2) + " Cr";
-    if (n >= 100000)   return "₹" + (n/100000).toFixed(2) + " L";
-    return "₹" + Math.round(n).toLocaleString("en-IN");
-  }
-  function fmt2(n) { return n != null ? "₹" + n.toFixed(2) : "—"; }
-
-  const Stat = ({ value, label, sub, color, bg }) => (
-    <div style={{flex:1,minWidth:130,background:bg||C.tealLight,borderRadius:12,padding:"1.25rem 1rem",border:`1.5px solid ${color||C.tealMid}`,textAlign:"center"}}>
-      <p style={{fontSize:11,fontWeight:600,color:color||C.teal,textTransform:"uppercase",letterSpacing:"0.07em",margin:"0 0 8px",lineHeight:1.3}}>{label}</p>
-      <p style={{fontSize:34,fontWeight:600,color:color||C.teal,margin:"0 0 4px",letterSpacing:"-0.02em",lineHeight:1}}>{value}</p>
-      {sub&&<p style={{fontSize:11,color:C.mid,margin:0,lineHeight:1.4}}>{sub}</p>}
-    </div>
-  );
-
-  return (
-    <div>
-      {/* Document header */}
-      <div style={{background:C.red,borderRadius:14,padding:"1.75rem 2rem",marginBottom:"1rem",position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",right:-30,top:-30,width:160,height:160,borderRadius:"50%",background:"rgba(255,255,255,0.07)"}}/>
-        <div style={{position:"absolute",right:60,bottom:-40,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,0.05)"}}/>
-        <p style={{fontSize:11,color:"rgba(255,255,255,0.65)",textTransform:"uppercase",letterSpacing:"0.1em",margin:"0 0 6px",fontWeight:600}}>Government stakeholder brief</p>
-        <h2 style={{fontSize:22,fontWeight:600,color:"#fff",margin:"0 0 6px",lineHeight:1.2}}>The Case for Wheat Flour Fortification</h2>
-        <p style={{fontSize:14,color:"rgba(255,255,255,0.8)",margin:"0 0 1rem"}}>{geoName||"India"} — Prepared by Fortify Health</p>
-        <p style={{fontSize:13,color:"rgba(255,255,255,0.75)",lineHeight:1.7,margin:0,maxWidth:580}}>
-          Adding iron and vitamins to government atta costs less than ₹6 per kg more — and reaches every family already receiving wheat through state food schemes, with no change to how they cook or eat.
-        </p>
-      </div>
-
-      {!hasVol && (
-        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"2rem",textAlign:"center",marginBottom:"1rem"}}>
-          <p style={{fontSize:24,margin:"0 0 8px"}}>📊</p>
-          <p style={{fontSize:14,fontWeight:600,color:C.dark,margin:"0 0 4px"}}>Enter your program details first</p>
-          <p style={{fontSize:13,color:C.mid,margin:0}}>Go to the <strong>Budget calculator</strong> tab and fill in your state and volume data. This brief will populate automatically with figures specific to your program.</p>
-        </div>
-      )}
-
-      {hasVol && (<>
-
-        {/* Section 1 — Cost numbers */}
-        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderLeft:`4px solid ${C.teal}`,borderRadius:14,padding:"1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.06)"}}>
-          <p style={{fontSize:10,fontWeight:700,color:C.teal,textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 14px"}}>01 — What it costs</p>
-          <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:14}}>
-            <Stat value={fmtINR(monthlyTotal)} label="Additional cost per month" sub={`across the full program`} />
-            <Stat value={fmtINR(additionalTotal)} label="Additional cost per year" sub="total additional spend to fortify" color={C.teal} bg={C.tealLight} />
-            <Stat value={fmt2(additionalUnitTotal)} label="Extra cost per kg of atta" sub="on top of existing procurement price" color={C.mid} bg={C.bg} />
-            {perPersonMonth!=null && <Stat value={fmt2(perPersonMonth)} label="Per person per month" sub="what fortification costs per family member" color={C.mid} bg={C.bg} />}
-          </div>
-          <div style={{background:C.peachLight,borderRadius:9,padding:"12px 16px",border:`1px solid ${C.peachMid}`}}>
-            <p style={{fontSize:13,color:C.dark,margin:0,lineHeight:1.75}}>
-              <strong style={{color:C.red}}>For just {fmt2(additionalUnitTotal)} extra per kg</strong>, every person receiving government atta in {geoName||"this program"} gets flour enriched with iron, folic acid, and B vitamins. The flour goes through the same mills, the same trucks, and the same ration shops — nothing changes except the nutrition.
-            </p>
-          </div>
-        </div>
-
-        {/* Section 2 — Cost of inaction */}
-        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderLeft:`4px solid #f39c12`,borderRadius:14,padding:"1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.06)"}}>
-          <p style={{fontSize:10,fontWeight:700,color:"#b07d10",textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 14px"}}>02 — The cost of not acting</p>
-          <p style={{fontSize:14,fontWeight:600,color:C.dark,margin:"0 0 14px",lineHeight:1.4}}>Treating anaemia in hospitals costs many times more than preventing it through fortified flour.</p>
-
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12,marginBottom:16}}>
-            {[
-              { label:"Cost to treat one anaemia patient with iron tablets — per year", value:"₹3,902", source:"Joshi et al., 2026" },
-              { label:"Cost to treat one anaemia patient with IV drip — per year", value:"₹13,742", source:"Joshi et al., 2026" },
-              { label:"India's annual economic loss from anaemia in children under 5", value:"USD 24,001 M", source:"Plessow et al., 2015" },
-            ].map((item,i)=>(
-              <div key={i} style={{background:"#fffbf0",borderRadius:10,padding:"14px 16px",border:`1px solid #ffe9a0`}}>
-                <p style={{fontSize:11,color:"#7a6000",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 6px",lineHeight:1.3}}>{item.label}</p>
-                <p style={{fontSize:28,fontWeight:600,color:"#b07d10",margin:"0 0 4px",letterSpacing:"-0.02em",lineHeight:1}}>{item.value}</p>
-                <p style={{fontSize:11,color:"#9a8060",margin:0}}>{item.source}</p>
-              </div>
-            ))}
-          </div>
-          <p style={{fontSize:12,color:C.mid,lineHeight:1.7,margin:0}}>
-            Anaemia — largely caused by iron deficiency — reduces the ability of children to learn and adults to work. Across India, this lost productivity is estimated at <strong>1.3% of GDP every year</strong> (Plessow et al., 2015). Fortifying wheat flour at the mill stops the problem before it starts, at a cost far below any hospital treatment.
-          </p>
-        </div>
-
-        {/* Section 3 — Why this works */}
-        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderLeft:`4px solid ${C.teal}`,borderRadius:14,padding:"1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.06)"}}>
-          <p style={{fontSize:10,fontWeight:700,color:C.teal,textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 14px"}}>03 — Why wheat flour fortification works</p>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:10}}>
-            {[
-              { icon:"🏭", title:"Minimal additional equipment", body:"A microdoser is installed at the mill to add nutrients during milling — a small, low-cost device already included in the cost estimate above. Distribution, packaging, and delivery all remain unchanged." },
-              { icon:"🍽️", title:"Families don't need to do anything differently", body:"Fortified atta looks, smells, and cooks exactly the same as regular atta. Every person who receives it automatically benefits." },
-              { icon:"📈", title:"Far cheaper than treating anaemia", body:"At " + fmt2(additionalUnitTotal) + "/kg, the cost of fortification is a small fraction of what the government spends treating anaemia patients in health facilities." },
-            ].map((r,i)=>(
-              <div key={i} style={{background:C.bg,borderRadius:10,padding:"1rem 1.1rem",border:`1px solid ${C.border}`}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                  <span style={{fontSize:20}}>{r.icon}</span>
-                  <p style={{fontSize:13,fontWeight:600,color:C.dark,margin:0}}>{r.title}</p>
-                </div>
-                <p style={{fontSize:12,color:C.mid,margin:0,lineHeight:1.65}}>{r.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* References */}
-        <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:"0 2px 8px rgba(0,151,167,0.06)"}}>
-          <p style={{fontSize:10,fontWeight:700,color:C.light,textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 10px"}}>Evidence sources</p>
-          {[
-            { ref:"Joshi, B., et al. (2026)", detail:"Cost-effectiveness of IV iron in pregnant women with IDA. Health Economics Review (In Press), ICMR-NIRRCH Mumbai.", url:"https://doi.org/10.1186/s13561-026-00790-4" },
-            { ref:"Saha, S., et al. (2024)", detail:"Cost-effectiveness of IV iron sucrose vs oral iron. Health Economics Review, IIPHG Gandhinagar.", url:"https://doi.org/10.1186/s13561-023-00474-3" },
-            { ref:"Plessow, R., et al. (2015)", detail:"Social costs of IDA in 6–59 month-old children in India. PLOS ONE / INCLEN New Delhi.", url:"https://doi.org/10.1371/journal.pone.0136581" },
-          ].map((s,i)=>(
-            <div key={i} style={{display:"flex",gap:10,padding:"8px 0",borderBottom:i<2?`1px solid ${C.border}`:"none",alignItems:"flex-start"}}>
-              <div style={{width:8,height:8,borderRadius:"50%",background:C.teal,flexShrink:0,marginTop:4}}/>
-              <div>
-                <p style={{fontSize:12,fontWeight:600,color:C.dark,margin:"0 0 1px"}}>{s.ref}</p>
-                <p style={{fontSize:12,color:C.mid,margin:"0 0 3px",lineHeight:1.5,fontStyle:"italic"}}>{s.detail}</p>
-                <a href={s.url} target="_blank" rel="noreferrer" style={{fontSize:11,color:C.teal,display:"inline-flex",alignItems:"center",gap:3}}>{s.url} <span style={{fontSize:10}}>↗</span></a>
-              </div>
-            </div>
-          ))}
-          <p style={{fontSize:11,color:C.light,margin:"10px 0 0",fontStyle:"italic"}}>⚠ The treatment cost figures above are from studies of pregnant women with moderate-to-severe anaemia. Please check with the Fortify Health team on the most appropriate comparison to use for your specific audience before sharing externally.</p>
-        </div>
-
-      </>)}
-
-      {/* Download button */}
-      <div style={{display:"flex",justifyContent:"flex-end",marginBottom:"1rem"}}>
-        <button
-          onClick={()=>generatePitchPDF({ geoName, targetVol, additionalUnitTotal, additionalTotal, population, monthlyTotal, perPersonMonth })}
-          disabled={!hasVol}
-          style={{display:"flex",alignItems:"center",gap:8,padding:"12px 28px",fontSize:13,fontWeight:600,borderRadius:9,border:"none",cursor:hasVol?"pointer":"not-allowed",background:hasVol?C.red:"#e0e0e0",color:"#fff",opacity:hasVol?1:0.6,letterSpacing:"0.01em"}}>
-          <span style={{fontSize:16}}>⬇</span> Download government brief (PDF)
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export default function App() {
   const [activeTab, setActiveTab] = useState("calculator");
   const [geoName, setGeoName] = useState("");
@@ -817,7 +491,6 @@ export default function App() {
   const [population, setPopulation] = useState("");
   const [kgPerBenef, setKgPerBenef] = useState("");
   const [totalMonthlyKg, setTotalMonthlyKg] = useState("");
-  const [activeVolumeMode, setActiveVolumeMode] = useState(null); // "beneficiary" | "consumption" | null
   const [customMode, setCustomMode] = useState(false);
   const [customCosts, setCustomCosts] = useState({...DEFAULT_COSTS});
   const [extraCats, setExtraCats] = useState([]);
@@ -889,18 +562,17 @@ export default function App() {
 
   const volMT = targetVol>0 ? (targetVol/1000).toFixed(2)+" MT" : null;
   const costPerKg = additionalUnitTotal;
-  const cardShadow = "0 2px 8px rgba(0,151,167,0.08), 0 1px 2px rgba(0,0,0,0.04)";
+  const cardShadow = "0 1px 4px rgba(0,151,167,0.06)";
 
   const tabs = [
     { id:"calculator", label:"💰 Budget calculator" },
-    { id:"pitch",      label:"📋 Stakeholder brief" },
   ];
 
   return (
     <>
       <style>{globalStyle}</style>
 
-      <div style={{background:`linear-gradient(160deg, ${C.red} 0%, #c94d46 60%, #b84040 100%)`,padding:"2.25rem 2rem 0"}}>
+      <div style={{background:`linear-gradient(135deg, ${C.red} 0%, #c94d46 100%)`,padding:"2rem 2rem 0"}} className="header-pad">
         <div style={{maxWidth:920,margin:"0 auto"}}>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
             <span style={{fontSize:28}}>🌾</span>
@@ -910,9 +582,9 @@ export default function App() {
           <div style={{display:"flex",gap:4}}>
             {tabs.map(t=>(
               <button key={t.id} onClick={()=>setActiveTab(t.id)}
-                style={{padding:"11px 22px",fontSize:13,fontWeight:600,border:"none",borderRadius:"10px 10px 0 0",cursor:"pointer",letterSpacing:"0.01em",
-                  background:activeTab===t.id?C.bg:"rgba(255,255,255,0.18)",
-                  color:activeTab===t.id?C.dark:"rgba(255,255,255,0.9)"}}>
+                style={{padding:"10px 20px",fontSize:13,fontWeight:500,border:"none",borderRadius:"8px 8px 0 0",cursor:"pointer",
+                  background:activeTab===t.id?"#f7fafa":"rgba(255,255,255,0.15)",
+                  color:activeTab===t.id?C.dark:"rgba(255,255,255,0.85)"}}>
                 {t.label}
               </button>
             ))}
@@ -920,16 +592,14 @@ export default function App() {
         </div>
       </div>
 
-      <div style={{maxWidth:940,margin:"0 auto",padding:"1.75rem 1.75rem 4rem"}}>
-        {activeTab==="pitch" && <PitchTab targetVol={targetVol} additionalUnitTotal={additionalUnitTotal} additionalTotal={additionalTotal} population={population} geoName={geoName} />}
-
+      <div style={{maxWidth:920,margin:"0 auto",padding:"1.5rem 1.5rem 3rem"}} className="content-pad">
         {activeTab==="calculator" && (          <>
             {/* How to use */}
             <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,marginBottom:"1rem",boxShadow:cardShadow,overflow:"hidden"}}>
-              <button onClick={()=>setGuideOpen(o=>!o)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"1.1rem 1.5rem",background:"none",border:"none",textAlign:"left",transition:"background 0.15s"}}>
+              <button onClick={()=>setGuideOpen(o=>!o)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"1rem 1.5rem",background:"none",border:"none",textAlign:"left"}}>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <div style={{width:4,height:22,background:C.peach,borderRadius:2,flexShrink:0}}/>
-                  <span style={{fontSize:12,fontWeight:600,color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em"}}>How to use this calculator</span>
+                  <div style={{width:6,height:20,background:C.yellow,borderRadius:3}}/>
+                  <span style={{fontSize:13,fontWeight:600,color:C.dark,textTransform:"uppercase",letterSpacing:"0.06em"}}>How to use this calculator</span>
                 </div>
                 <span style={{fontSize:18,color:C.light}}>{guideOpen?"−":"+"}</span>
               </button>
@@ -938,7 +608,7 @@ export default function App() {
                   <p style={{fontSize:13,color:C.mid,margin:"1rem 0 1.25rem",lineHeight:1.7}}>This tool helps program managers and stakeholders estimate the additional annual cost of introducing fortified atta into an existing food distribution program.</p>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12}}>
                     {HOW_TO.map((h,i)=>(
-                      <div key={i} style={{background:C.white,borderRadius:11,padding:"1.1rem 1.2rem",border:`1px solid ${C.border}`,boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
+                      <div key={i} style={{background:C.bg,borderRadius:10,padding:"1rem 1.1rem",border:`1px solid ${C.border}`}}>
                         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
                           <span style={{fontSize:18}}>{h.icon}</span>
                           <span style={{fontSize:13,fontWeight:600,color:C.dark}}>{h.title}</span>
@@ -956,10 +626,10 @@ export default function App() {
             </div>
 
             {/* Inputs */}
-            <div style={{background:"#fff",border:`1px solid ${C.border}`,borderLeft:`4px solid ${C.teal}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:cardShadow}}>
+            <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",marginBottom:"1rem",boxShadow:cardShadow}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-                <div style={{width:4,height:22,background:C.teal,borderRadius:2,flexShrink:0}}/>
-                <p style={{fontSize:11,fontWeight:700,color:C.teal,margin:0,textTransform:"uppercase",letterSpacing:"0.09em"}}>Input parameters</p>
+                <div style={{width:6,height:20,background:C.teal,borderRadius:3}}/>
+                <p style={{fontSize:13,fontWeight:600,color:C.teal,margin:0,textTransform:"uppercase",letterSpacing:"0.06em"}}>Input parameters</p>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14,marginBottom:14}}>
                 <div>
@@ -979,32 +649,24 @@ export default function App() {
               </div>
 
               {/* Volume inputs */}
-              <div style={{background:"#f0f8f9",borderRadius:10,padding:"14px 16px",border:`1.5px solid ${C.tealMid}33`}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-                  <p style={{fontSize:11,fontWeight:600,color:C.teal,textTransform:"uppercase",letterSpacing:"0.06em",margin:0}}>Volume — fill in one group only</p>
-                  {activeVolumeMode&&<span style={{fontSize:11,padding:"2px 10px",borderRadius:20,background:C.tealLight,color:C.teal,border:`1px solid ${C.tealMid}`,fontWeight:500}}>Using: {activeVolumeMode==="beneficiary"?"Beneficiaries":"Total consumption"}</span>}
-                </div>
+              <div style={{background:C.bg,borderRadius:10,padding:"12px 14px",border:`1px solid ${C.border}`}}>
+                <p style={{fontSize:11,fontWeight:600,color:C.mid,textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 10px"}}>Volume — fill in whichever you know</p>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,alignItems:"end"}}>
                   <div>
                     <Label>Total beneficiaries</Label>
-                    <input type="number" placeholder="e.g. 50,000" value={population}
-                      onChange={e=>{ setPopulation(e.target.value); if(e.target.value){ setActiveVolumeMode("beneficiary"); setTotalMonthlyKg(""); } else if(!kgPerBenef){ setActiveVolumeMode(null); } }}
-                      style={{opacity:activeVolumeMode==="consumption"?0.4:1,transition:"opacity 0.2s"}}/>
+                    <input type="number" placeholder="e.g. 50,000" value={population} onChange={e=>setPopulation(e.target.value)}/>
                   </div>
                   <div>
                     <Label>Kg / beneficiary (monthly)</Label>
-                    <input type="number" placeholder="e.g. 5" value={kgPerBenef}
-                      onChange={e=>{ setKgPerBenef(e.target.value); if(e.target.value){ setActiveVolumeMode("beneficiary"); setTotalMonthlyKg(""); } else if(!population){ setActiveVolumeMode(null); } }}
-                      style={{opacity:activeVolumeMode==="consumption"?0.4:1,transition:"opacity 0.2s"}}/>
+                    <input type="number" placeholder="e.g. 5" value={kgPerBenef} onChange={e=>setKgPerBenef(e.target.value)}/>
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",paddingBottom:2,gap:6}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",paddingBottom:2}}>
                     <span style={{fontSize:13,color:C.light,fontWeight:500}}>— or —</span>
-                    {activeVolumeMode&&<button onClick={()=>{ setPopulation(""); setKgPerBenef(""); setTotalMonthlyKg(""); setActiveVolumeMode(null); }} style={{fontSize:11,padding:"3px 10px",borderRadius:6,border:`1px solid ${C.redMid}`,background:C.redLight,color:C.red,fontWeight:500,cursor:"pointer"}}>Clear all</button>}
                   </div>
                   <div>
                     <Label>Total monthly consumption</Label>
                     <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                      <input type="number" placeholder={volumeUnit==="MT"?"e.g. 250":"e.g. 250,000"} value={totalMonthlyKg} onChange={e=>{ setTotalMonthlyKg(e.target.value); if(e.target.value){ setActiveVolumeMode("consumption"); setPopulation(""); setKgPerBenef(""); } else { setActiveVolumeMode(null); } }} style={{flex:1,opacity:activeVolumeMode==="beneficiary"?0.4:1,transition:"opacity 0.2s"}}/>
+                      <input type="number" placeholder={volumeUnit==="MT"?"e.g. 250":"e.g. 250,000"} value={totalMonthlyKg} onChange={e=>setTotalMonthlyKg(e.target.value)} style={{flex:1}}/>
                       <div style={{display:"flex",borderRadius:8,border:`1.5px solid ${C.border}`,overflow:"hidden",flexShrink:0}}>
                         {["kg","MT"].map(u=>(
                           <button key={u} onClick={()=>handleVolumeUnitToggle(u)}
@@ -1021,24 +683,24 @@ export default function App() {
             </div>
 
             {/* Summary cards */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1.3fr",gap:12,marginBottom:"1rem"}}>
+            <div className="summary-cards">
               <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"1.1rem 1.25rem",boxShadow:cardShadow}}>
-                <p style={{fontSize:10,fontWeight:700,color:C.light,textTransform:"uppercase",letterSpacing:"0.08em",margin:"0 0 8px"}}>Target volume / year</p>
-                <p style={{fontSize:28,fontWeight:600,color:C.dark,margin:0,lineHeight:1.05,letterSpacing:"-0.02em"}}>{volMT||"—"}</p>
+                <p style={{fontSize:11,fontWeight:600,color:C.mid,textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 6px"}}>Target volume / year</p>
+                <p style={{fontSize:26,fontWeight:600,color:C.dark,margin:0,lineHeight:1.1}}>{volMT||"—"}</p>
                 {volMT&&<p style={{fontSize:11,color:C.light,margin:"3px 0 0"}}>{targetVol.toLocaleString("en-IN")} kg</p>}
               </div>
               <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"1.1rem 1.25rem",boxShadow:cardShadow}}>
-                <p style={{fontSize:10,fontWeight:700,color:C.light,textTransform:"uppercase",letterSpacing:"0.08em",margin:"0 0 8px"}}>Additional cost / kg</p>
-                <p style={{fontSize:28,fontWeight:600,color:C.dark,margin:0,lineHeight:1.05,letterSpacing:"-0.02em"}}>₹{fmt2(costPerKg)}<span style={{fontSize:13,fontWeight:400,color:C.light}}> /kg</span></p>
+                <p style={{fontSize:11,fontWeight:600,color:C.mid,textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 6px"}}>Additional cost / kg</p>
+                <p style={{fontSize:26,fontWeight:600,color:C.dark,margin:0,lineHeight:1.1}}>₹{fmt2(costPerKg)}<span style={{fontSize:13,fontWeight:400,color:C.light}}> /kg</span></p>
                 <p style={{fontSize:11,color:C.light,margin:"3px 0 0"}}>{isGrain?"Grain → fortified atta":"Flour → fortified atta"}</p>
               </div>
-              <div style={{background:`linear-gradient(135deg, ${C.teal} 0%, ${C.tealDark} 100%)`,borderRadius:12,padding:"1.1rem 1.25rem",position:"relative",overflow:"hidden"}}>
+              <div style={{background:`linear-gradient(135deg, ${C.teal} 0%, #007b8a 100%)`,borderRadius:12,padding:"1.1rem 1.25rem",position:"relative",overflow:"hidden"}}>
                 <div style={{position:"absolute",right:-16,top:-16,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.08)"}}/>
                 <div style={{position:"absolute",right:20,bottom:-20,width:60,height:60,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}/>
-                <p style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.7)",textTransform:"uppercase",letterSpacing:"0.09em",margin:"0 0 6px"}}>Additional annual cost</p>
-                <p style={{fontSize:28,fontWeight:600,color:"#fff",margin:0,lineHeight:1.05,letterSpacing:"-0.02em"}}>{fmtBig(additionalTotal)}</p>
+                <p style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.75)",textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 4px"}}>Additional annual cost</p>
+                <p style={{fontSize:26,fontWeight:600,color:"#fff",margin:0,lineHeight:1.1}}>{fmtBig(additionalTotal)}</p>
                 {targetVol>0&&(
-                  <p style={{fontSize:11,color:"rgba(255,255,255,0.6)",margin:"4px 0 0"}}>₹{fmt2(additionalUnitTotal)}/kg additional cost</p>
+                  <p style={{fontSize:11,color:"rgba(255,255,255,0.6)",margin:"4px 0 0"}}>Full program cost: {fmtBig(fullTotalCost)}</p>
                 )}
                 <p style={{fontSize:11,color:"rgba(255,255,255,0.65)",margin:"3px 0 0"}}>{geoName||"—"}</p>
               </div>
@@ -1046,28 +708,29 @@ export default function App() {
 
             {/* Context bubble */}
             {targetVol>0&&(
-              <div style={{background:C.peachLight,borderRadius:10,padding:"12px 16px",marginBottom:"1rem",border:`1px solid ${C.peachMid}`}}>
-                <p style={{fontSize:12,color:"#5a3530",lineHeight:1.7,margin:0}}>
+              <div style={{background:C.sand,borderRadius:10,padding:"10px 16px",marginBottom:"1rem",border:`1px solid #c9c4b8`}}>
+                <p style={{fontSize:12,color:"#4a4438",lineHeight:1.65,margin:0}}>
                   <strong>💡 {isGrain?"Wheat grain suppliers":"Wheat flour suppliers"}:</strong>{" "}
                   {isGrain
-                    ? `Your additional cost covers transport, milling, packaging, fortification, and distribution — everything needed to transition to fortified atta.`
-                    : `Since you already supply wheat flour, your only additional cost is fortification. Milling, packaging, and distribution are already part of your existing operations.`}
+                    ? `Your additional cost covers transport, milling, packaging, fortification, and distribution — everything needed to transition to fortified atta. Your full program cost including procurement is ${fmtBig(fullTotalCost)}.`
+                    : `Since you already supply wheat flour, your only additional cost is fortification. Milling, packaging, and procurement are already part of your existing operations.`}
                 </p>
               </div>
             )}
 
             {/* Breakdown + Additional */}
-            <div style={{display:"grid",gridTemplateColumns:"1.6fr 1fr",gap:12,marginBottom:"1rem",alignItems:"start"}}>
-              <div style={{background:"#fff",border:`1px solid ${C.border}`,borderLeft:`4px solid ${C.peach}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:cardShadow}}>
+            <div className="breakdown-grid">
+              <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:cardShadow}}>
                 <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}}>
                   <SectionTitle sub={isGrain?"Costs added by transitioning to fortified atta":"Fortification cost only — existing costs not shown"}>
                     Additional cost breakdown
                   </SectionTitle>
                   <button onClick={()=>{ if(!customMode) setCustomCosts({...DEFAULT_COSTS}); setCustomMode(!customMode); }}
-                    style={{fontSize:12,padding:"7px 16px",background:customMode?C.tealLight:"#fff",color:customMode?C.teal:C.mid,border:`1.5px solid ${customMode?C.teal:C.border}`,borderRadius:8,fontWeight:600,flexShrink:0,marginLeft:8,letterSpacing:"0.01em"}}>
+                    style={{fontSize:12,padding:"7px 14px",background:customMode?C.tealLight:"#f5f8f8",color:customMode?C.teal:C.mid,border:`1.5px solid ${customMode?C.teal:C.border}`,borderRadius:8,fontWeight:500,flexShrink:0,marginLeft:8}}>
                     {customMode?"✓ Custom on":"Edit costs"}
                   </button>
                 </div>
+                <div className="scroll-table">
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
                   <thead>
                     <tr style={{borderBottom:`1.5px solid ${C.border}`}}>
@@ -1080,10 +743,10 @@ export default function App() {
                     {visibleCosts.map(({key,label})=>{
                       const uc=parseFloat(costs[key])||0;
                       return (
-                        <tr key={key} style={{borderBottom:`1px solid ${C.border}`,background:C.peachLight}}>
+                        <tr key={key} style={{borderBottom:`1px solid ${C.border}`,background:C.yellowLight}}>
                           <td style={{padding:"8px 0"}}>
                             <div style={{display:"flex",alignItems:"center",gap:7}}>
-                              <span style={{fontSize:9,padding:"2px 7px",borderRadius:10,background:C.peach,color:C.red,fontWeight:700}}>+</span>
+                              <span style={{fontSize:9,padding:"2px 6px",borderRadius:10,background:C.yellow,color:"#7a5c00",fontWeight:600}}>+</span>
                               <span style={{color:C.dark}}>{label}</span>
                             </div>
                           </td>
@@ -1097,10 +760,10 @@ export default function App() {
                       );
                     })}
                     {extraCats.map(e=>(
-                      <tr key={e.id} style={{borderBottom:`1px solid ${C.border}`,background:C.peachLight}}>
+                      <tr key={e.id} style={{borderBottom:`1px solid ${C.border}`,background:C.yellowLight}}>
                         <td style={{padding:"8px 0"}}>
                           <div style={{display:"flex",alignItems:"center",gap:7}}>
-                            <span style={{fontSize:9,padding:"2px 7px",borderRadius:10,background:C.peach,color:C.red,fontWeight:700}}>+</span>
+                            <span style={{fontSize:9,padding:"2px 6px",borderRadius:10,background:C.yellow,color:"#7a5c00",fontWeight:600}}>+</span>
                             <span style={{color:C.dark}}>{e.label}</span>
                             <button onClick={()=>removeExtra(e.id)} style={{fontSize:11,color:C.light,background:"none",border:"none",padding:"0 2px",lineHeight:1,marginLeft:2}}>✕</button>
                           </div>
@@ -1120,16 +783,17 @@ export default function App() {
                     </tr>
                   </tfoot>
                 </table>
-                <div style={{marginTop:12,padding:"12px 14px",background:C.tealLight,borderRadius:9,border:`1.5px dashed ${C.tealMid}`}}>
-                  <p style={{fontSize:11,fontWeight:700,color:C.teal,textTransform:"uppercase",letterSpacing:"0.07em",margin:"0 0 10px"}}>+ Add cost category</p>
+                </div>
+                <div style={{marginTop:12,padding:"10px 12px",background:C.bg,borderRadius:8,border:`1px dashed ${C.border}`}}>
+                  <p style={{fontSize:11,fontWeight:600,color:C.mid,textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 8px"}}>+ Add cost category</p>
                   <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
                     <input placeholder="Category name (e.g. Storage costs)" value={newLabel} onChange={e=>setNewLabel(e.target.value)} style={{flex:"2 1 140px",fontSize:12,padding:"7px 10px"}}/>
                     <input type="number" placeholder="₹/kg" value={newCost} onChange={e=>setNewCost(e.target.value)} step="0.01" style={{flex:"1 1 70px",fontSize:12,padding:"7px 10px"}}/>
-                    <button onClick={addCategory} style={{fontSize:12,padding:"8px 18px",background:C.teal,color:"#fff",border:"none",borderRadius:8,fontWeight:600,flexShrink:0,letterSpacing:"0.02em"}}>Add</button>
+                    <button onClick={addCategory} style={{fontSize:12,padding:"7px 14px",background:C.teal,color:"#fff",border:"none",borderRadius:8,fontWeight:500,flexShrink:0}}>Add</button>
                   </div>
                 </div>
                 {(customMode||extraCats.length>0)&&(
-                  <button onClick={handleReset} style={{marginTop:10,fontSize:12,padding:"7px 14px",background:C.redLight,color:C.red,border:`1.5px solid ${C.redMid}`,borderRadius:8,fontWeight:600}}>Reset to defaults</button>
+                  <button onClick={handleReset} style={{marginTop:10,fontSize:12,padding:"6px 12px",background:C.redLight,color:C.red,border:`1px solid ${C.redMid}`,borderRadius:7,fontWeight:500}}>Reset to defaults</button>
                 )}
               </div>
 
@@ -1183,45 +847,17 @@ export default function App() {
                   </tr>
                 </tbody>
               </table>
-              <div style={{marginTop:14,padding:"12px 16px",background:C.peachLight,borderRadius:9,border:`1px solid ${C.peachMid}`}}>
-                <p style={{fontSize:12,color:"#7a3830",margin:0,lineHeight:1.65}}>
-                  <strong>Note:</strong> Default costs are based on Fortify Health Implementation team estimates. They are a starting point — costs will vary by state and context. Transportation assumptions are based on an average distance of ~100 km (approximate operational radius of districts in India). The cost of the microdoser is included within the milling cost component. Use <em>Edit costs</em> to enter figures that reflect your program.
+              <div style={{marginTop:14,padding:"10px 14px",background:C.yellowLight,borderRadius:8,border:`1px solid ${C.yellowMid}`}}>
+                <p style={{fontSize:12,color:"#7a5c00",margin:0,lineHeight:1.6}}>
+                  <strong>Note:</strong> Default costs are sourced from the <em>Wheat Flour Supply Chain Analysis</em> by the Food Fortification Initiative (FFI), State of Haryana, India, December 2016. They are a starting point — costs will vary by state and context. Use <em>Edit costs</em> to enter figures that reflect your program.
                 </p>
               </div>
             </div>
 
-            {/* Pitch statement */}
-            {targetVol>0 && population && parseFloat(population)>0 && (
-              <div style={{background:`linear-gradient(135deg, ${C.dark} 0%, #2a4a4e 100%)`,borderRadius:14,padding:"2rem 2.5rem",marginBottom:"1rem",textAlign:"center"}}>
-                <p style={{fontSize:13,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600,margin:"0 0 1.5rem"}}>The case for fortification</p>
-                <p style={{fontSize:17,color:"rgba(255,255,255,0.9)",lineHeight:2,margin:0,maxWidth:640,marginLeft:"auto",marginRight:"auto"}}>
-                  Fortifying your atta program costs{" "}
-                  <span style={{fontSize:36,fontWeight:600,color:C.peach,letterSpacing:"-0.02em",display:"inline-block",lineHeight:1.1,verticalAlign:"middle",margin:"0 6px"}}>
-                    ₹{(additionalTotal/12/parseFloat(population)).toFixed(2)}
-                  </span>
-                  {" "}per person per month.
-                </p>
-                <p style={{fontSize:17,color:"rgba(255,255,255,0.9)",lineHeight:2,margin:"0.75rem 0 0",maxWidth:640,marginLeft:"auto",marginRight:"auto"}}>
-                  By comparison, managing a single case of iron deficiency anaemia costs{" "}
-                  <span style={{fontSize:36,fontWeight:600,color:"#f39c12",letterSpacing:"-0.02em",display:"inline-block",lineHeight:1.1,verticalAlign:"middle",margin:"0 6px"}}>
-                    ₹3,902
-                  </span>
-                  {" "}per person per year.
-                </p>
-                <p style={{fontSize:11,color:"rgba(255,255,255,0.35)",margin:"1.5rem 0 0"}}>
-                  Anaemia treatment cost:{" "}
-                  <a href="https://doi.org/10.1186/s13561-026-00790-4" target="_blank" rel="noreferrer"
-                     style={{color:"rgba(255,255,255,0.45)",textDecoration:"underline"}}>
-                    Joshi et al. (2026), ICMR-NIRRCH Mumbai ↗
-                  </a>
-                </p>
-              </div>
-            )}
-
             {/* Export PDF */}
             <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"1.25rem 1.5rem",boxShadow:cardShadow}}>
               <SectionTitle sub="Customise and download a report for meetings or presentations">Export report</SectionTitle>
-              <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}} className="export-row">
                 <div style={{flex:"1 1 260px"}}>
                   <input
                     type="text"
@@ -1234,7 +870,7 @@ export default function App() {
                 <button
                   onClick={()=>generatePDF({ geoName, supplyType, targetVol, additionalUnitTotal, additionalTotal, fullTotalCost, costs, visibleCosts, extraCats, isGrain, volumeUnit, totalMonthlyKg, reportTitle })}
                   disabled={!targetVol}
-                  style={{display:"flex",alignItems:"center",gap:8,padding:"11px 24px",fontSize:13,fontWeight:600,borderRadius:9,border:"none",cursor:targetVol?"pointer":"not-allowed",background:targetVol?C.red:"#e0e0e0",color:"#fff",opacity:targetVol?1:0.6,transition:"all 0.15s",flexShrink:0,letterSpacing:"0.01em"}}>
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",fontSize:13,fontWeight:600,borderRadius:9,border:"none",cursor:targetVol?"pointer":"not-allowed",background:targetVol?C.red:"#e0e0e0",color:"#fff",opacity:targetVol?1:0.6,transition:"opacity 0.15s",flexShrink:0}}>
                   <span style={{fontSize:15}}>⬇</span> Export PDF report
                 </button>
               </div>
